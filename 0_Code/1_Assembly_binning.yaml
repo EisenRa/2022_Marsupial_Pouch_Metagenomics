@@ -1,0 +1,7 @@
+ name: AssemblyBinning
+ channels:
+    - conda-forge
+    - bioconda
+    - defaults
+ dependencies:
+    - fastp=0.23.1
