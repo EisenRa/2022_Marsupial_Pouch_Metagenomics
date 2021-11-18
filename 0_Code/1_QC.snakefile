@@ -84,9 +84,8 @@ rule index_ref:
     shell:
         """
         # Concatenate input reference genomes
-        for reference in {input}/*.gz;
-            do cat $reference > {input}/CattedRefs.fna.gz;
-                done
+        cat {input}/*.gz > {input}/CattedRefs.fna.gz
+        
         # Index catted genomes
         bowtie2-build \
             --large-index \
