@@ -1,9 +1,10 @@
- name: QC_Assembly
+ name: Assembly_Binning
  channels:
     - conda-forge
     - bioconda
     - defaults
  dependencies:
-    - fastp=0.23.1
-    - metaspades=3.15.3
+    - spades=3.15.3
     - bowtie2=2.4.4
+    - quast=5.0.2
+    - coverm=0.6.1

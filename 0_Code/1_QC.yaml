@@ -6,5 +6,4 @@
  dependencies:
     - fastp=0.23.1
     - samtools=1.12
-    - spades=3.15.3
     - bowtie2=2.4.4
