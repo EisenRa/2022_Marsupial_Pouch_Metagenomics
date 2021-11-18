@@ -85,7 +85,7 @@ rule index_ref:
         """
         # Concatenate input reference genomes
         cat {input}/*.gz > {input}/CattedRefs.fna.gz
-        
+
         # Index catted genomes
         bowtie2-build \
             --large-index \
@@ -105,7 +105,8 @@ rule map_to_ref:
         all_bam = temp("3_Outputs/1_QC/1_BAMs/{sample}.bam"),
         host_bam = "3_Outputs/1_QC/1_Host_BAMs/{sample}_host.bam",
         non_host_r1 = "2_Reads/3_Host_removed/{sample}_non_host_1.fastq.gz",
-        non_host_r2 = "2_Reads/3_Host_removed/{sample}_non_host_2.fastq.gz"
+        non_host_r2 = "2_Reads/3_Host_removed/{sample}_non_host_2.fastq.gz",
+        coverm = "3_Outputs/1_QC/2_CoverM/{sample}_coverM.tsv"
     conda:
         "1_QC.yaml"
     threads:
@@ -120,11 +121,11 @@ rule map_to_ref:
         """
         # Map reads to catted reference using Bowtie2
         bowtie2 \
-        --time \
-        --threads {threads} \
-        -x {input.catted_ref} \
-        -1 {input.r1i} \
-        -2 {input.r2i} \
+            --time \
+            --threads {threads} \
+            -x {input.catted_ref} \
+            -1 {input.r1i} \
+            -2 {input.r2i} \
         | samtools view -@ {threads} -o {output.all_bam} - &&
 
         # Split extract non-host reads
@@ -133,9 +134,21 @@ rule map_to_ref:
 
         # Send host reads to BAM
         samtools view -b -F4 -@ {threads} {output.all_bam} \
-        | samtools sort -@ {threads} -o {output.host_bam} - \
+        | samtools sort -@ {threads} -o {output.host_bam} -
+
+        #Calculate % mapping to host using coverM
+        coverm \
+            -b {output.all_bam} \
+            -s _ \
+            -m relative_abundance \
+            -t {threads} \
+            --min-covered-fraction 0 \
+            > {output.coverm}
         """
 ################################################################################
-
 onsuccess:
-    shell("""mail -s "workflow completed" raph.eisenhofer@gmail.com < {log}""")
+    shell("""
+            mail -s "workflow completed" raph.eisenhofer@gmail.com < {log}
+
+            #Clean up files
+          """)
