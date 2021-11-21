@@ -102,11 +102,10 @@ rule map_to_ref:
         catted_ref = "1_References/CattedRefs.fna.gz",
         bt2_index = "1_References/CattedRefs.fna.gz.rev.2.bt2l"
     output:
-        all_bam = temp("3_Outputs/1_QC/1_BAMs/{sample}.bam"),
+        all_bam = "3_Outputs/1_QC/1_BAMs/{sample}.bam",
         host_bam = "3_Outputs/1_QC/1_Host_BAMs/{sample}_host.bam",
         non_host_r1 = "2_Reads/3_Host_removed/{sample}_non_host_1.fastq.gz",
         non_host_r2 = "2_Reads/3_Host_removed/{sample}_non_host_2.fastq.gz",
-        coverm = "3_Outputs/1_QC/2_CoverM/{sample}_coverM.tsv"
     conda:
         "1_QC.yaml"
     threads:
@@ -135,15 +134,34 @@ rule map_to_ref:
         # Send host reads to BAM
         samtools view -b -F4 -@ {threads} {output.all_bam} \
         | samtools sort -@ {threads} -o {output.host_bam} -
-
+        """
+################################################################################
+### Calculate % of each sample's reads mapping to host genome/s
+rule coverM:
+    input:
+        expand("3_Outputs/1_QC/1_BAMs/{sample}.bam", sample=SAMPLE)
+    output:
+        "3_Outputs/1_QC/2_CoverM/coverM_mapped_host.tsv"
+    conda:
+        "1_QC.yaml"
+    threads:
+        40
+    benchmark:
+        "3_Outputs/0_Logs/coverM.benchmark.tsv"
+    log:
+        "3_Outputs/0_Logs/coverM.log"
+    message:
+        "Calculating percentage of reads mapped to host genome/s using coverM"
+    shell:
+        """
         #Calculate % mapping to host using coverM
         coverm \
-            -b {output.all_bam} \
+            -b {input} \
             -s _ \
             -m relative_abundance \
             -t {threads} \
             --min-covered-fraction 0 \
-            > {output.coverm}
+            > {output}
         """
 ################################################################################
 onsuccess:
@@ -151,4 +169,5 @@ onsuccess:
             mail -s "workflow completed" raph.eisenhofer@gmail.com < {log}
 
             #Clean up files
+            rm 3_Outputs/1_QC/1_BAMs/*/*.bam 
           """)
