@@ -27,7 +27,8 @@ rule all:
     input:
         expand("2_Reads/1_Trimmed/{sample}_trimmed_1.fastq.gz", sample=SAMPLE),
         expand("2_Reads/1_Trimmed/{sample}_trimmed_2.fastq.gz", sample=SAMPLE),
-        expand("3_Outputs/1_QC/1_Host_BAMs/{sample}_host.bam", sample=SAMPLE)
+        expand("3_Outputs/1_QC/1_Host_BAMs/{sample}_host.bam", sample=SAMPLE),
+        "3_Outputs/1_QC/2_CoverM/coverM_mapped_host.tsv"
 ################################################################################
 ### Preprocess the reads using fastp
 rule fastp:
@@ -169,5 +170,5 @@ onsuccess:
             mail -s "workflow completed" raph.eisenhofer@gmail.com < {log}
 
             #Clean up files
-            rm 3_Outputs/1_QC/1_BAMs/*/*.bam 
+            rm 3_Outputs/1_QC/1_BAMs/*/*.bam
           """)
