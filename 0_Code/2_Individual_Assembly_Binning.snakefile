@@ -72,7 +72,7 @@ rule QUAST:
     conda:
         "2_Assembly_Binning.yaml"
     threads:
-        20
+        8
     message:
         "Running QUAST on {wildcards.sample} assembly"
     shell:
@@ -144,7 +144,7 @@ rule assembly_mapping:
         | samtools view -@ {threads} -o {output.mapped_bam} -
         """
 ################################################################################
-### Bin eacj sample's contigs using metaWRAP's binning module
+### Bin each sample's contigs using metaWRAP's binning module
 rule metaWRAP_binning:
     input:
         "3_Outputs/3_Assembly_Mapping/BAMs/{sample}.bam"
@@ -156,11 +156,11 @@ rule metaWRAP_binning:
         outdir = "3_Outputs/3_Assembly_Mapping/Binning/{sample}",
         assembly = "3_Outputs/3_Assemblies/{sample}_contigs.fasta",
         basename = "3_Outputs/3_Assembly_Mapping/BAMs/{sample}",
-        memory = "16"
+        memory = "180"
     conda:
         "2_MetaWRAP.yaml"
     threads:
-        8
+        40
     benchmark:
         "3_Outputs/0_Logs/{sample}_assembly_binning.benchmark.tsv"
     log:
@@ -202,12 +202,12 @@ rule metaWRAP_refinement:
         contigmap = "3_Outputs/3_Assembly_Mapping/Refined_Bins/{sample}_metawrap_70_10_bins.contigs"
     params:
         outdir = "3_Outputs/3_Assembly_Mapping/Refined_Bins/{sample}",
-        memory = "16",
+        memory = "180",
         sample = "{sample}"
     conda:
         "2_MetaWRAP.yaml"
     threads:
-        8
+        40
     benchmark:
         "3_Outputs/0_Logs/{sample}_assembly_bin_refinement.benchmark.tsv"
     log:
