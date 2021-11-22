@@ -55,6 +55,7 @@ rule Assembly:
         metaspades.py \
             -t {threads} \
             -k 21,33,55,77,99 \
+            --only-assembler \
             -1 {input.r1} -2 {input.r2} \
             -o {params.workdir}
         2> {log}

@@ -56,9 +56,10 @@ rule fastp:
             --in1 {input.r1i} --in2 {input.r2i} \
             --out1 {output.r1o} --out2 {output.r2o} \
             --trim_poly_g \
+            --trim_poly_x \
             --n_base_limit 5 \
             --qualified_quality_phred 20 \
-            --length_required 40 \
+            --length_required 60 \
             --thread {threads} \
             --html {output.fastp_html} \
             --json {output.fastp_json} \
