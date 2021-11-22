@@ -160,7 +160,6 @@ rule coverM:
         #Calculate % mapping to host using coverM
         coverm genome \
             -b {input} \
-            --genome-fasta-files {params.assembly} \
             -s _ \
             -m relative_abundance \
             -t {threads} \
