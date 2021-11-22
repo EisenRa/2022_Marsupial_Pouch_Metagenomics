@@ -126,7 +126,7 @@ rule map_to_ref:
             -x {input.catted_ref} \
             -1 {input.r1i} \
             -2 {input.r2i} \
-        | samtools view -@ {threads} -o {output.all_bam} - &&
+        | samtools view -@ {threads} - | samtools sort -@ {threads} -o {output.all_bam} - &&
 
         # Split extract non-host reads
         samtools view -b -f4 -@ {threads} {output.all_bam} \
