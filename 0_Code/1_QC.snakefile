@@ -158,7 +158,7 @@ rule coverM:
     shell:
         """
         #Calculate % mapping to host using coverM
-        coverm \
+        coverm genome \
             -b {input} \
             --genome-fasta-files {params.assembly} \
             -s _ \
