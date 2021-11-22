@@ -143,6 +143,8 @@ rule coverM:
         expand("3_Outputs/1_QC/1_BAMs/{sample}.bam", sample=SAMPLE)
     output:
         "3_Outputs/1_QC/2_CoverM/coverM_mapped_host.tsv"
+    params:
+        assembly = "1_References/CattedRefs.fna.gz"
     conda:
         "1_QC.yaml"
     threads:
@@ -158,6 +160,7 @@ rule coverM:
         #Calculate % mapping to host using coverM
         coverm \
             -b {input} \
+            --genome-fasta-files {params.assembly} \
             -s _ \
             -m relative_abundance \
             -t {threads} \
