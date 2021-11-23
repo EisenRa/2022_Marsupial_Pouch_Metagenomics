@@ -130,11 +130,11 @@ rule map_to_ref:
         | samtools view -b -@ {threads} - | samtools sort -@ {threads} -o {output.all_bam} - &&
 
         # Split extract non-host reads
-        samtools view -b -f4 -@ {threads} {output.all_bam} \
+        samtools view -b -f12 -@ {threads} {output.all_bam} \
         | samtools fastq -@ {threads} -c 6 -1 {output.non_host_r1} -2 {output.non_host_r2} - &&
 
         # Send host reads to BAM
-        samtools view -b -F4 -@ {threads} {output.all_bam} \
+        samtools view -b -F12 -@ {threads} {output.all_bam} \
         | samtools sort -@ {threads} -o {output.host_bam} -
         """
 ################################################################################
