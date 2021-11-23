@@ -51,7 +51,7 @@ rule Assembly:
     log:
         "3_Outputs/0_Logs/{sample}_assembly.log"
     message:
-        "Assembling {wildcards.sample} using {wildcards.assembler}"
+        "Assembling {wildcards.sample} using {params.assembler}"
     shell:
         """
         export assembler={config[assembler]}
