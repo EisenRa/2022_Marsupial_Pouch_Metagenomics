@@ -12,6 +12,8 @@
 import os
 from glob import glob
 
+ASSEMBLER = 'megahit'
+
 GROUP = [os.path.basename(dir)
          for dir in glob(f"2_Reads/3_Host_removed/*")]
 
@@ -48,21 +50,41 @@ rule Assembly:
     log:
         "3_Outputs/0_Logs/{sample}_assembly.log"
     message:
-        "Assembling {wildcards.sample} using metaspades"
-    shell:
-        """
-        # Run metaspades
-        metaspades.py \
-            -t {threads} \
-            -k 21,33,55,77,99 \
-            --only-assembler \
-            -1 {input.r1} -2 {input.r2} \
-            -o {params.workdir}
-        2> {log}
+        "Assembling {wildcards.sample} using {wildcards.assembler}"
+    run:
+        if wildcards.assembler == 'metaspades':
+            shell(
+                    """
+                    # Run metaspades
+                    metaspades.py \
+                        -t {threads} \
+                        -k 21,33,55,77,99 \
+                        --only-assembler \
+                        -1 {input.r1} -2 {input.r2} \
+                        -o {params.workdir}
+                    2> {log}
 
-        # Move the Coassembly to final destination
-        mv {params.workdir}/scaffolds.fasta {output.assembly}
-        """
+                    # Move the Coassembly to final destination
+                    mv {params.workdir}/scaffolds.fasta {output.assembly}
+                    """)
+        else:
+            shell(
+                    """
+                    # Run megahit
+                    metaspades.py \
+                        -t {threads} \
+                        --verbose \
+                        --min-contig-len 1500 \
+                        -1 {input.r1} -2 {input.r2} \
+                        -o {params.workdir}
+                    2> {log}
+
+                    # Move the Coassembly to final destination
+                    mv {params.workdir}/scaffolds.fasta {output.assembly}
+
+                    # Reformat headers
+                    sed -i 's/ /-/g' {output.assembly}
+                    """)
 ################################################################################
 ### Create QUAST reports of assemblies
 rule QUAST:
