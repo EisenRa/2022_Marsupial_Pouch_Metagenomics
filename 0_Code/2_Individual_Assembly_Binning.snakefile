@@ -77,7 +77,7 @@ rule Assembly:
 
         else
         # Run megahit
-            metaspades.py \
+            megahit \
                 -t {threads} \
                 --verbose \
                 --min-contig-len 1500 \
