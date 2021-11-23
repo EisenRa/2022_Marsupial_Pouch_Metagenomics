@@ -68,6 +68,13 @@ rule Assembly:
                 -1 {input.r1} -2 {input.r2} \
                 -o {params.workdir}
                 2> {log}
+
+        # Remove contigs shorter than 1,500 bp
+            reformat.sh
+                in={params.workdir}/scaffolds.fasta \
+                out={output.assembly} \
+                minlength=1500
+        
         else
         # Run megahit
             metaspades.py \
@@ -79,13 +86,13 @@ rule Assembly:
                 2> {log}
 
         # Move the Coassembly to final destination
-        mv {params.workdir}/scaffolds.fasta {output.assembly}
+            mv {params.workdir}/scaffolds.fasta {output.assembly}
 
         # Reformat headers
-        sed -i 's/ /-/g' {output.assembly}
+            sed -i 's/ /-/g' {output.assembly}
 
         # Move the Coassembly to final destination
-        mv {params.workdir}/scaffolds.fasta {output.assembly}
+            mv {params.workdir}/scaffolds.fasta {output.assembly}
         fi
         """
 ################################################################################
