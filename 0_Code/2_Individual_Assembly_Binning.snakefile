@@ -58,7 +58,7 @@ rule Assembly:
         # Set up assembler variable from config file
         export assembler={config[assembler]}
 
-        if [ $assembler -eq metaspades ]
+        if [ $assembler == metaspades ]
         then
         # Run metaspades
             metaspades.py \
@@ -74,7 +74,7 @@ rule Assembly:
                 in={params.workdir}/scaffolds.fasta \
                 out={output.assembly} \
                 minlength=1500
-        
+
         else
         # Run megahit
             metaspades.py \
