@@ -86,13 +86,11 @@ rule Assembly:
                 2> {log}
 
         # Move the Coassembly to final destination
-            mv {params.workdir}/scaffolds.fasta {output.assembly}
+            mv {params.workdir}/final.contigs.fa {output.assembly}
 
         # Reformat headers
             sed -i 's/ /-/g' {output.assembly}
 
-        # Move the Coassembly to final destination
-            mv {params.workdir}/scaffolds.fasta {output.assembly}
         fi
         """
 ################################################################################
