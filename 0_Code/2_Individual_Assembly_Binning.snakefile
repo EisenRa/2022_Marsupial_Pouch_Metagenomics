@@ -30,7 +30,7 @@ print(SAMPLE)
 rule all:
     input:
 #        expand("3_Outputs/3_Assembly_Mapping/BAMs/{sample}_coverM.txt", sample=SAMPLE)
-        expand("3_Outputs/2_Assemblies/{sample}_QUAST/report.html", sample=SAMPLE)
+        expand("3_Outputs/2_Assemblies/{sample}_QUAST/", sample=SAMPLE)
 
 ################################################################################
 ### Perform assembly on each sample
