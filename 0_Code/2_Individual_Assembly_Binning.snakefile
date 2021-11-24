@@ -12,8 +12,6 @@
 import os
 from glob import glob
 
-ASSEMBLER = 'megahit'
-
 GROUP = [os.path.basename(dir)
          for dir in glob(f"2_Reads/3_Host_removed/*")]
 
@@ -29,8 +27,8 @@ print(SAMPLE)
 ### Setup the desired outputs
 rule all:
     input:
-#        expand("3_Outputs/3_Assembly_Mapping/BAMs/{sample}_coverM.txt", sample=SAMPLE)
-        expand("3_Outputs/2_Assemblies/{sample}_QUAST/", sample=SAMPLE)
+        expand("3_Outputs/3_Assembly_Mapping/BAMs/{sample}_coverM.txt", sample=SAMPLE)
+#        expand("3_Outputs/2_Assemblies/{sample}_QUAST/", sample=SAMPLE)
 
 ################################################################################
 ### Perform assembly on each sample
@@ -117,7 +115,7 @@ rule QUAST:
 ### Index each sample's assembly
 rule assembly_index:
     input:
-        report = "3_Outputs/2_Assemblies/{sample}_QUAST/report.html"
+        report = directory("3_Outputs/2_Assemblies/{sample}_QUAST")
     output:
         bt2_index = "3_Outputs/2_Assemblies/{sample}_contigs.fasta.rev.2.bt2l",
     params:
