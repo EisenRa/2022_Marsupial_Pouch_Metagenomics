@@ -182,7 +182,7 @@ rule metaWRAP_binning:
         metabat2 = "3_Outputs/3_Assembly_Mapping/Binning/{sample}/metabat2_bins",
     params:
         outdir = "3_Outputs/3_Assembly_Mapping/Binning/{sample}",
-        assembly = "3_Outputs/3_Assemblies/{sample}_contigs.fasta",
+        assembly = "3_Outputs/2_Assemblies/{sample}_contigs.fasta",
         basename = "3_Outputs/3_Assembly_Mapping/BAMs/{sample}",
         memory = "180"
     conda:
