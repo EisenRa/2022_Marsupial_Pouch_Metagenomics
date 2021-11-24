@@ -115,9 +115,9 @@ rule QUAST:
 ### Index each sample's assembly
 rule assembly_index:
     input:
-        report = directory("3_Outputs/2_Assemblies/{sample}_QUAST")
+        report = "3_Outputs/2_Assemblies/{sample}_QUAST"
     output:
-        bt2_index = "3_Outputs/2_Assemblies/{sample}_contigs.fasta.rev.2.bt2l",
+        bt2_index = "3_Outputs/2_Assemblies/{sample}_contigs.fasta.rev.2.bt2l"
     params:
         assembly = "3_Outputs/2_Assemblies/{sample}_contigs.fasta"
     conda:
