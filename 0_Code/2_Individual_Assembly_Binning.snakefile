@@ -27,7 +27,7 @@ print(SAMPLE)
 ### Setup the desired outputs
 rule all:
     input:
-        expand("3_Outputs/3_Assembly_Mapping/BAMs/{sample}_coverM.txt", sample=SAMPLE)
+        expand("3_Outputs/6_CoverM/{sample}_coverM.txt", sample=SAMPLE)
 #        expand("3_Outputs/2_Assemblies/{sample}_QUAST/", sample=SAMPLE)
 
 ################################################################################
@@ -169,7 +169,7 @@ rule assembly_mapping:
             -x {params.assembly} \
             -1 {params.r1} \
             -2 {params.r2} \
-        | samtools view -@ {threads} -o {output.mapped_bam} -
+        | samtools sort -@ {threads} -o {output.mapped_bam}
         """
 ################################################################################
 ### Bin each sample's contigs using metaWRAP's binning module
@@ -177,11 +177,11 @@ rule metaWRAP_binning:
     input:
         "3_Outputs/3_Assembly_Mapping/BAMs/{sample}.bam"
     output:
-        concoct = "3_Outputs/3_Assembly_Mapping/Binning/{sample}/concoct_bins",
-        maxbin2 = "3_Outputs/3_Assembly_Mapping/Binning/{sample}/maxbin2_bins",
-        metabat2 = "3_Outputs/3_Assembly_Mapping/Binning/{sample}/metabat2_bins",
+        concoct = "3_Outputs/4_Binning/{sample}/concoct_bins",
+        maxbin2 = "3_Outputs/4_Binning/{sample}/maxbin2_bins",
+        metabat2 = "3_Outputs/4_Binning/{sample}/metabat2_bins",
     params:
-        outdir = "3_Outputs/3_Assembly_Mapping/Binning/{sample}",
+        outdir = "3_Outputs/4_Binning/{sample}",
         assembly = "3_Outputs/2_Assemblies/{sample}_contigs.fasta",
         basename = "3_Outputs/3_Assembly_Mapping/BAMs/{sample}",
         memory = "180"
@@ -206,7 +206,7 @@ rule metaWRAP_binning:
         echo "@" > {params.outdir}/work_files/$(basename {params.basename}_2.fastq)
 
         #Symlink BAMs for metaWRAP
-        ln -s {input} {params.outdir}/work_files/$(basename {input})
+        ln -s `pwd`/{input} {params.outdir}/work_files/$(basename {input})
 
         # Run metaWRAP binning
         metawrap binning -o {params.outdir} \
@@ -222,14 +222,14 @@ rule metaWRAP_binning:
 ### Automatically refine bins using metaWRAP's refinement module
 rule metaWRAP_refinement:
     input:
-        concoct = "3_Outputs/3_Assembly_Mapping/Binning/{sample}/concoct_bins",
-        maxbin2 = "3_Outputs/3_Assembly_Mapping/Binning/{sample}/maxbin2_bins",
-        metabat2 = "3_Outputs/3_Assembly_Mapping/Binning/{sample}/metabat2_bins",
+        concoct = "3_Outputs/4_Binning/{sample}/concoct_bins",
+        maxbin2 = "3_Outputs/4_Binning/{sample}/maxbin2_bins",
+        metabat2 = "3_Outputs/4_Binning/{sample}/metabat2_bins",
     output:
-        stats = "3_Outputs/3_Assembly_Mapping/Refined_Bins/{sample}_metawrap_70_10_bins.stats",
-        contigmap = "3_Outputs/3_Assembly_Mapping/Refined_Bins/{sample}_metawrap_70_10_bins.contigs"
+        stats = "3_Outputs/5_Refined_Bins/{sample}_metawrap_70_10_bins.stats",
+        contigmap = "3_Outputs/5_Refined_Bins/{sample}_metawrap_70_10_bins.contigs"
     params:
-        outdir = "3_Outputs/3_Assembly_Mapping/Refined_Bins/{sample}",
+        outdir = "3_Outputs/5_Refined_Bins/{sample}",
         memory = "180",
         sample = "{sample}"
     conda:
@@ -264,11 +264,11 @@ rule metaWRAP_refinement:
 ### Calculate the number of reads that mapped to coassemblies
 rule coverM_assembly:
     input:
-        stats = "3_Outputs/3_Assembly_Mapping/Refined_Bins/{sample}_metawrap_70_10_bins.stats",
+        stats = "3_Outputs/5_Refined_Bins/{sample}_metawrap_70_10_bins.stats",
         assembly = "3_Outputs/2_Assemblies/{sample}_contigs.fasta",
         mapped_bam = "3_Outputs/3_Assembly_Mapping/BAMs/{sample}.bam"
     output:
-        "3_Outputs/3_Assembly_Mapping/BAMs/{sample}_coverM.txt"
+        "3_Outputs/6_CoverM/{sample}_coverM.txt"
     params:
     conda:
         "2_Assembly_Binning.yaml"
