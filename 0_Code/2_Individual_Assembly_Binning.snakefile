@@ -64,7 +64,6 @@ rule Assembly:
             metaspades.py \
                 -t {threads} \
                 -k 21,33,55,77,99 \
-                --only-assembler \
                 -1 {input.r1} -2 {input.r2} \
                 -o {params.workdir}
                 2> {log}
@@ -99,7 +98,7 @@ rule QUAST:
     input:
         assembly = "3_Outputs/2_Assemblies/{sample}_contigs.fasta"
     output:
-        report = "3_Outputs/2_Assemblies/{sample}_QUAST/report.html",
+        report = directory("3_Outputs/2_Assemblies/{sample}_QUAST")
     conda:
         "2_Assembly_Binning.yaml"
     threads:
