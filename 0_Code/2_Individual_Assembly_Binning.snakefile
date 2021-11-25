@@ -244,6 +244,9 @@ rule metaWRAP_refinement:
         "Refining {wildcards.sample} bins with MetaWRAP's bin refinement module"
     shell:
         """
+        # Setup checkM path
+        printf "/home/projects/ku-cbd/people/rapeis/0_DBs/CHECKM" | checkm data setRoot
+
         metawrap bin_refinement \
             -m {params.memory} \
             -t {threads} \
