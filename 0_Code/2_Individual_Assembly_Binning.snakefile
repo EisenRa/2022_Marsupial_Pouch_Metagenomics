@@ -177,9 +177,9 @@ rule metaWRAP_binning:
     input:
         "3_Outputs/3_Assembly_Mapping/BAMs/{sample}.bam"
     output:
-        concoct = "3_Outputs/4_Binning/{sample}/concoct_bins",
-        maxbin2 = "3_Outputs/4_Binning/{sample}/maxbin2_bins",
-        metabat2 = "3_Outputs/4_Binning/{sample}/metabat2_bins",
+        concoct = directory("3_Outputs/4_Binning/{sample}/concoct_bins"),
+        maxbin2 = directory("3_Outputs/4_Binning/{sample}/maxbin2_bins"),
+        metabat2 = directory("3_Outputs/4_Binning/{sample}/metabat2_bins")
     params:
         outdir = "3_Outputs/4_Binning/{sample}",
         assembly = "3_Outputs/2_Assemblies/{sample}_contigs.fasta",
