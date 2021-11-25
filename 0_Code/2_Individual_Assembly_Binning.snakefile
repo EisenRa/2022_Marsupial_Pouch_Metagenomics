@@ -12,15 +12,9 @@
 import os
 from glob import glob
 
-GROUP = [os.path.basename(dir)
-         for dir in glob(f"2_Reads/3_Host_removed/*")]
+SAMPLE = [os.path.basename(fn).replace("_non_host_1.fastq.gz", "")
+            for fn in glob(f"2_Reads/3_Host_removed/*_1.fastq.gz")]
 
-SAMPLE = [os.path.relpath(fn, "2_Reads/3_Host_removed").replace("_non_host_1.fastq.gz", "")
-            for group in GROUP
-            for fn in glob(f"2_Reads/3_Host_removed/{group}/*_1.fastq.gz")]
-
-print("Detected these sample groups:")
-print(GROUP)
 print("Detected the following samples:")
 print(SAMPLE)
 ################################################################################
@@ -258,8 +252,8 @@ rule metaWRAP_refinement:
             -x 10
 
         # Rename metawrap bins to match coassembly group:
-        mv {params.outdir}/metawrap_70_10_bins.stats {output.stats}
-        mv {params.outdir}/metawrap_70_10_bins.contigs {output.contigmap}
+        cp {params.outdir}/metawrap_70_10_bins.stats {output.stats}
+        cp {params.outdir}/metawrap_70_10_bins.contigs {output.contigmap}
         sed -i'' '2,$s/bin/bin_{params.sample}/g' {output.stats}
         sed -i'' 's/bin/bin_{params.sample}/g' {output.contigmap}
         """
