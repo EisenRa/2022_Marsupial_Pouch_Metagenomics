@@ -12,14 +12,16 @@
 import os
 from glob import glob
 
-GROUP = [os.path.basename(dir)
-         for dir in glob(f"2_Reads/0_Untrimmed/*")]
+# GROUP = [os.path.basename(dir)
+#          for dir in glob(f"2_Reads/0_Untrimmed/*")]
+# SAMPLE = [os.path.relpath(fn, "2_Reads/0_Untrimmed/").replace("_1.fastq.gz", "")
+#             for group in GROUP
+#             for fn in glob(f"2_Reads/0_Untrimmed/{group}/*_1.fastq.gz")]
 
-SAMPLE = [os.path.relpath(fn, "2_Reads/0_Untrimmed/").replace("_1.fastq.gz", "")
-            for group in GROUP
-            for fn in glob(f"2_Reads/0_Untrimmed/{group}/*_1.fastq.gz")]
+SAMPLE = [os.path.basename(fn).replace("_1.fastq.gz", "")
+            for fn in glob(f"2_Reads/0_Untrimmed/*_1.fastq.gz")]
 
-print(GROUP)
+# print(GROUP)
 print(SAMPLE)
 ################################################################################
 ### Setup the desired outputs
