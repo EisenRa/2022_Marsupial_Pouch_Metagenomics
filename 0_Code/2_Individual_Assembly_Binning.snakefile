@@ -21,8 +21,8 @@ print(SAMPLE)
 ### Setup the desired outputs
 rule all:
     input:
-#        expand("3_Outputs/6_CoverM/{sample}_coverM.txt", sample=SAMPLE)
-        expand("3_Outputs/2_Assemblies/{sample}_QUAST/", sample=SAMPLE)
+        expand("3_Outputs/6_CoverM/{sample}_coverM.txt", sample=SAMPLE)
+#        expand("3_Outputs/2_Assemblies/{sample}_QUAST/", sample=SAMPLE)
 
 ################################################################################
 ### Perform assembly on each sample
