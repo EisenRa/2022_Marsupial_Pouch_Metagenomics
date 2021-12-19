@@ -267,7 +267,7 @@ rule metaWRAP_refinement:
         rm -r {params.outdir}/maxbin2_bins
         rm -r {params.outdir}/metabat2_bins
 
-        pigz -t {threads} {params.outdir}/metawrap_70_10_bins/* 
+        pigz -p {threads} {params.outdir}/metawrap_70_10_bins/*
         """
 ################################################################################
 ### Calculate the number of reads that mapped to coassemblies
