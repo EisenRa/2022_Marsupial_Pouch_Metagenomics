@@ -224,6 +224,8 @@ rule metaWRAP_refinement:
         contigmap = "3_Outputs/5_Refined_Bins/{sample}_metawrap_70_10_bins.contigs"
     params:
         outdir = "3_Outputs/5_Refined_Bins/{sample}",
+        binning_wfs = "3_Outputs/4_Binning/{sample}/work_files",
+        refinement_wfs = "3_Outputs/5_Refined_Bins/{sample}/work_files",
         memory = "180",
         sample = "{sample}"
     conda:
@@ -256,6 +258,16 @@ rule metaWRAP_refinement:
         cp {params.outdir}/metawrap_70_10_bins.contigs {output.contigmap}
         sed -i'' '2,$s/bin/bin_{params.sample}/g' {output.stats}
         sed -i'' 's/bin/bin_{params.sample}/g' {output.contigmap}
+
+        # Compress, clean outputs:
+        rm -r {params.binning_wfs}/*_out
+        rm {params.workfiles}/assembly*
+        rm -r {params.refinement_wfs}
+        rm -r {params.outdir}/concoct_bins
+        rm -r {params.outdir}/maxbin2_bins
+        rm -r {params.outdir}/metabat2_bins
+
+        pigz -t {threads} {params.outdir}/metawrap_70_10_bins/* 
         """
 ################################################################################
 ### Calculate the number of reads that mapped to coassemblies
