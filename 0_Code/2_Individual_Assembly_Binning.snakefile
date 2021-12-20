@@ -261,7 +261,7 @@ rule metaWRAP_refinement:
 
         # Compress, clean outputs:
         rm -r {params.binning_wfs}/*_out
-        rm {params.workfiles}/assembly*
+        rm {params.binning_wfs}/assembly*
         rm -r {params.refinement_wfs}
         rm -r {params.outdir}/concoct_bins
         rm -r {params.outdir}/maxbin2_bins
