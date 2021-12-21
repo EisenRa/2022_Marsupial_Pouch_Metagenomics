@@ -321,9 +321,9 @@ rule coverM_assembly:
     threads:
         8
     benchmark:
-        "3_Outputs/0_Logs/{sample}_coverM.benchmark.tsv"
+        "3_Outputs/0_Logs/coverM_assembly.benchmark.tsv"
     log:
-        "3_Outputs/0_Logs/{sample}_coverM.log"
+        "3_Outputs/0_Logs/coverM_assembly.log"
     message:
         "Calculating assembly mapping rate with CoverM"
     shell:
