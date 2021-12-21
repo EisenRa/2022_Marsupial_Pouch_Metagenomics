@@ -21,7 +21,7 @@ print(SAMPLE)
 ### Setup the desired outputs
 rule all:
     input:
-        expand("3_Outputs/6_CoverM/{sample}_coverM.txt", sample=SAMPLE),
+        "3_Outputs/6_CoverM/coverM_assemblies_rel_abun.txt",
         "3_Outputs/5_Refined_Bins/All_bins.stats"
 
 ################################################################################
