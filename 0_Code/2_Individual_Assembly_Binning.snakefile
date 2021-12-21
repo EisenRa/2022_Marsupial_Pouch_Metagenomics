@@ -289,7 +289,6 @@ rule reformat_metawrap:
         "2_Assembly_Binning.yaml"
     threads:
         8
-    benchmark:
     message:
         "Reformatting metaWRAP outputs"
     shell:
