@@ -277,7 +277,7 @@ rule metaWRAP_refinement:
 ### Calculate the number of reads that mapped to coassemblies
 rule reformat_metawrap:
     input:
-        expand("3_Outputs/5_Refined_Bins/{sample}_metawrap_70_10_bins.stats")
+        expand("3_Outputs/5_Refined_Bins/{sample}_metawrap_70_10_bins.stats", sample=SAMPLE)
     output:
         stats = "3_Outputs/5_Refined_Bins/All_bins.stats",
     params:
@@ -313,11 +313,9 @@ rule reformat_metawrap:
 ### Calculate the number of reads that mapped to coassemblies
 rule coverM_assembly:
     input:
-        stats = "3_Outputs/5_Refined_Bins/{sample}_metawrap_70_10_bins.stats",
-        assembly = "3_Outputs/2_Assemblies/{sample}_contigs.fasta",
-        mapped_bam = "3_Outputs/3_Assembly_Mapping/BAMs/{sample}.bam"
+        expand("3_Outputs/3_Assembly_Mapping/BAMs/{sample}.bam", sample=SAMPLE)
     output:
-        "3_Outputs/6_CoverM/{sample}_coverM.txt"
+        "3_Outputs/6_CoverM/coverM_assemblies_rel_abun.txt"
     params:
     conda:
         "2_Assembly_Binning.yaml"
@@ -328,14 +326,14 @@ rule coverM_assembly:
     log:
         "3_Outputs/0_Logs/{sample}_coverM.log"
     message:
-        "Calculating assembly mapping rate for {wildcards.sample} with CoverM"
+        "Calculating assembly mapping rate with CoverM"
     shell:
         """
         coverm genome \
-            -b {input.mapped_bam} \
-            --genome-fasta-files {input.assembly} \
+            -b {input} \
             -m relative_abundance \
             -t {threads} \
+            -s _ \
             --min-covered-fraction 0 \
             > {output}
         """
