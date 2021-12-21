@@ -21,8 +21,8 @@ print(SAMPLE)
 ### Setup the desired outputs
 rule all:
     input:
-        expand("3_Outputs/6_CoverM/{sample}_coverM.txt", sample=SAMPLE)
-#        expand("3_Outputs/2_Assemblies/{sample}_QUAST/", sample=SAMPLE)
+        expand("3_Outputs/6_CoverM/{sample}_coverM.txt", sample=SAMPLE),
+        "3_Outputs/5_Refined_Bins/All_bins.stats"
 
 ################################################################################
 ### Perform assembly on each sample
@@ -224,6 +224,7 @@ rule metaWRAP_refinement:
         contigmap = "3_Outputs/5_Refined_Bins/{sample}_metawrap_70_10_bins.contigs"
     params:
         outdir = "3_Outputs/5_Refined_Bins/{sample}",
+        bindir = "3_Outputs/5_Refined_Bins/{sample}/metawrap_70_10_bins",
         binning_wfs = "3_Outputs/4_Binning/{sample}/work_files",
         refinement_wfs = "3_Outputs/5_Refined_Bins/{sample}/work_files",
         memory = "180",
@@ -258,6 +259,9 @@ rule metaWRAP_refinement:
         cp {params.outdir}/metawrap_70_10_bins.contigs {output.contigmap}
         sed -i'' '2,$s/bin/bin_{params.sample}/g' {output.stats}
         sed -i'' 's/bin/bin_{params.sample}/g' {output.contigmap}
+        for bin in {params.bindir}/*.fa;
+            do mv $bin ${{bin/bin/bin_{params.sample}}};
+                done
 
         # Compress, clean outputs:
         rm -r {params.binning_wfs}/*_out
@@ -267,7 +271,42 @@ rule metaWRAP_refinement:
         rm -r {params.outdir}/maxbin2_bins
         rm -r {params.outdir}/metabat2_bins
 
-        pigz -p {threads} {params.outdir}/metawrap_70_10_bins/*
+        pigz -p {threads} {params.bindir}/*
+        """
+################################################################################
+### Calculate the number of reads that mapped to coassemblies
+rule reformat_metawrap:
+    input:
+        expand("3_Outputs/5_Refined_Bins/{sample}_metawrap_70_10_bins.stats")
+    output:
+        stats = "3_Outputs/5_Refined_Bins/All_bins.stats",
+    params:
+        all_folder = "3_Outputs/5_Refined_Bins/All_metawrap_70_10_bins",
+        wd = "3_Outputs/5_Refined_Bins",
+        stats_no_header = "3_Outputs/5_Refined_Bins/All_bins_no_header.stats",
+    conda:
+        "2_Assembly_Binning.yaml"
+    threads:
+        8
+    benchmark:
+    message:
+        "Reformatting metaWRAP outputs"
+    shell:
+        """
+        # Copy each sample's bins to a single folder
+        mkdir -p {params.all_folder}
+        cp {params.wd}/*/metawrap_70_10_bins/* {params.all_folder}
+
+        # Setup headers for combined metawrap file:
+        echo -e bin' \t 'completeness' \t 'contamination' \t 'GC' \t 'lineage' \t 'N50' \t 'size' \t 'binner > {params.wd}/header.txt
+
+        #Cat the bin info from each group together
+        grep -v 'contamination' {params.wd}/{params.sample}_metawrap_70_10_bins.stats >> {params.stats_no_header}
+        cat {params.wd}/header.txt {params.stats_no_header} > {output.stats}
+
+        # Clean up
+        rm {params.stats_no_header}
+        rm {params.wd}/header.txt
         """
 ################################################################################
 ### Calculate the number of reads that mapped to coassemblies
