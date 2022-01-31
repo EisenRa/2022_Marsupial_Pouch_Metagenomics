@@ -76,8 +76,6 @@ rule QUAST:
         Coassembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta"
     output:
         report = directory("3_Outputs/2_Coassemblies/{group}_QUAST"),
-    params:
-        group = "{group}"
     conda:
         "2_Assembly_Binning.yaml"
     threads:
@@ -94,7 +92,7 @@ rule QUAST:
 
         # Rename QUAST files
         for i in {output.report}/*;
-            do mv $i {group}_"$i";
+            do mv $i {wildcards.group}_"$i";
                 done
         """
 ################################################################################
