@@ -92,7 +92,7 @@ rule QUAST:
 
         # Rename QUAST files
         for i in {output.report}/*;
-            do mv $i {wildcards.group}_"$i";
+            do mv $i {output.report}/{wildcards.group}_$(basename $i);
                 done
         """
 ################################################################################
