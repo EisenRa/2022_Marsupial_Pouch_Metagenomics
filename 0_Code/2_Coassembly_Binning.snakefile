@@ -74,7 +74,9 @@ rule QUAST:
     input:
         Coassembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta"
     output:
-        report = "3_Outputs/2_Coassemblies/{group}_QUAST/report.html",
+        report = directory("3_Outputs/2_Coassemblies/{group}_QUAST"),
+    params:
+        group = "{group}"
     conda:
         "2_Assembly_Binning.yaml"
     threads:
@@ -88,6 +90,11 @@ rule QUAST:
             -o {output.report} \
             --threads {threads} \
             {input.Coassembly}
+
+        # Rename QUAST files
+        for i in {output.report}/*;
+            do mv $i {group}_"$i";
+                done
         """
 ################################################################################
 ### Map reads to the coassemblies
