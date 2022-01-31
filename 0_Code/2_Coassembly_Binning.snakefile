@@ -62,7 +62,8 @@ rule Coassembly:
             -t {threads} \
             -k 21,33,55,77,99 \
             -1 {output.r1_cat} -2 {output.r2_cat} \
-            -o {params.workdir}
+            -o {params.workdir} \
+            --assembly-only
         2> {log}
 
         # Move the Coassembly to final destination
