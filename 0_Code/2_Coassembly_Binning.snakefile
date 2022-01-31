@@ -101,7 +101,7 @@ rule QUAST:
 ### Map reads to the coassemblies
 rule Coassembly_index:
     input:
-        report = "3_Outputs/2_Coassemblies/{group}_QUAST/report.html"
+        report = "3_Outputs/2_Coassemblies/{group}_QUAST/"
     output:
         bt2_index = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta.rev.2.bt2l",
     params:
