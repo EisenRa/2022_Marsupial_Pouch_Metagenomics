@@ -37,10 +37,10 @@ rule Coassembly:
         reads = "2_Reads/3_Host_removed/{group}"
     output:
         Coassembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
-        r1_cat = temp("3_Outputs/2_Coassemblies/{group}/{group}_1.fastq.gz"),
-        r2_cat = temp("3_Outputs/2_Coassemblies/{group}/{group}_2.fastq.gz")
     params:
         workdir = "3_Outputs/2_Coassemblies/{group}",
+        r1_cat = temp("3_Outputs/2_Coassemblies/{group}/{group}_1.fastq.gz"),
+        r2_cat = temp("3_Outputs/2_Coassemblies/{group}/{group}_2.fastq.gz"),
         assembler = expand("{assembler}", assembler=config['assembler']),
     conda:
         "2_Assembly_Binning.yaml"
@@ -61,14 +61,14 @@ rule Coassembly:
         then
 
         # Concatenate reads from the same group for Coassembly
-        cat {input.reads}/*_1.fastq.gz > {output.r1_cat}
-        cat {input.reads}/*_2.fastq.gz > {output.r2_cat}
+        cat {input.reads}/*_1.fastq.gz > {params.r1_cat}
+        cat {input.reads}/*_2.fastq.gz > {params.r2_cat}
 
         # Run metaspades
             metaspades.py \
                 -t {threads} \
                 -k 21,33,55,77,99 \
-                -1 {output.r1_cat} -2 {output.r2_cat} \
+                -1 {params.r1_cat} -2 {params.r2_cat} \
                 -o {params.workdir}
                 2> {log}
 
