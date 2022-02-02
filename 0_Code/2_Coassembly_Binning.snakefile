@@ -79,12 +79,17 @@ rule Coassembly:
                 minlength=1500
 
         else
+
+        # Set up input reads variable for megahit
+        R1=$(for i in 2_Reads/3_Host_removed/Ss/*_1.fastq.gz; do echo $i | tr '\n' ,; done)
+        R2=$(for i in 2_Reads/3_Host_removed/Ss/*_2.fastq.gz; do echo $i | tr '\n' ,; done)
+
         # Run megahit
             megahit \
                 -t {threads} \
                 --verbose \
                 --min-contig-len 1500 \
-                -1 {input.reads}/*_1.fastq.gz -2 {input.reads}/*_2.fastq.gz \
+                -1 $R1 -2 $R2 \
                 -o {params.workdir}
                 2> {log}
 
