@@ -27,7 +27,7 @@ print(SAMPLE)
 ### Setup the desired outputs
 rule all:
     input:
-        directory("3_Outputs/2_Coassemblies/{group}_QUAST"),
+        directory("3_Outputs/2_Coassemblies/{group}_QUAST", group=GROUP),
         expand("3_Outputs/3_Coassembly_Mapping/BAMs/{group}_coverM.txt", group=GROUP)
 
 ################################################################################
