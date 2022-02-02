@@ -41,6 +41,7 @@ rule Coassembly:
         r2_cat = temp("3_Outputs/2_Coassemblies/{group}/{group}_2.fastq.gz")
     params:
         workdir = "3_Outputs/2_Coassemblies/{group}",
+        assembler = expand("{assembler}", assembler=config['assembler']),
     conda:
         "2_Assembly_Binning.yaml"
     threads:
@@ -50,24 +51,45 @@ rule Coassembly:
     log:
         "3_Outputs/0_Logs/{group}_coassembly.log"
     message:
-        "Coassembling {wildcards.group} using metaspades"
+        "Coassembling {wildcards.group} using {params.assembler}"
     shell:
         """
-        # Concatenate reads from the same group for Coassembly
-        cat {input.reads}/*_1.fastq.gz > {output.r1_cat}
-        cat {input.reads}/*_1.fastq.gz > {output.r2_cat}
+        # Set up assembler variable from config file
+        export assembler={config[assembler]}
 
+        if [ "$assembler" == "metaspades" ]
+        then
         # Run metaspades
-        metaspades.py \
-            -t {threads} \
-            -k 21,33,55,77,99 \
-            -1 {output.r1_cat} -2 {output.r2_cat} \
-            -o {params.workdir} \
-            --only-assembler
-        2> {log}
+            metaspades.py \
+                -t {threads} \
+                -k 21,33,55,77,99 \
+                -1 {input.r1} -2 {input.r2} \
+                -o {params.workdir}
+                2> {log}
+
+        # Remove contigs shorter than 1,500 bp
+            reformat.sh
+                in={params.workdir}/scaffolds.fasta \
+                out={output.assembly} \
+                minlength=1500
+
+        else
+        # Run megahit
+            megahit \
+                -t {threads} \
+                --verbose \
+                --min-contig-len 1500 \
+                -1 {input.r1} -2 {input.r2} \
+                -o {params.workdir}
+                2> {log}
 
         # Move the Coassembly to final destination
-        mv {params.workdir}/scaffolds.fasta {output.Coassembly}
+            mv {params.workdir}/final.contigs.fa {output.assembly}
+
+        # Reformat headers
+            sed -i 's/ /-/g' {output.assembly}
+
+        fi
         """
 ################################################################################
 ### Create QUAST reports of coassemblies
@@ -81,7 +103,7 @@ rule QUAST:
     threads:
         20
     message:
-        "Running QUAST on {wildcards.group} coassembly"
+        "Running -QUAST on {wildcards.group} coassembly"
     shell:
         """
         # Run QUAST
