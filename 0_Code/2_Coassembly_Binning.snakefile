@@ -34,7 +34,7 @@ rule all:
 ### Perform Coassemblies on each sample group
 rule Coassembly:
     input:
-        reads = "2_Reads/3_Host_removed/{group}"
+        reads = "2_Reads/3_Host_removed/{group}/*_1.fastq.gz"
     output:
         Coassembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
         r1_cat = temp("3_Outputs/2_Coassemblies/{group}/{group}_1.fastq.gz"),
@@ -59,11 +59,16 @@ rule Coassembly:
 
         if [ "$assembler" == "metaspades" ]
         then
+
+        # Concatenate reads from the same group for Coassembly
+        cat {input.reads}/*_1.fastq.gz > {output.r1_cat}
+        cat {input.reads}/*_2.fastq.gz > {output.r2_cat}
+
         # Run metaspades
             metaspades.py \
                 -t {threads} \
                 -k 21,33,55,77,99 \
-                -1 {input.r1} -2 {input.r2} \
+                -1 {output.r1_cat} -2 {output.r1_cat} \
                 -o {params.workdir}
                 2> {log}
 
@@ -79,7 +84,7 @@ rule Coassembly:
                 -t {threads} \
                 --verbose \
                 --min-contig-len 1500 \
-                -1 {input.r1} -2 {input.r2} \
+                -1 {input.reads}/*_1.fastq.gz -2 {input.reads}/*_2.fastq.gz \
                 -o {params.workdir}
                 2> {log}
 
