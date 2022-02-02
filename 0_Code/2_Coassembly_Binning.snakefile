@@ -75,7 +75,7 @@ rule Coassembly:
         # Remove contigs shorter than 1,500 bp
             reformat.sh
                 in={params.workdir}/scaffolds.fasta \
-                out={output.assembly} \
+                out={output.Coassembly} \
                 minlength=1500
 
         else
@@ -89,10 +89,10 @@ rule Coassembly:
                 2> {log}
 
         # Move the Coassembly to final destination
-            mv {params.workdir}/final.contigs.fa {output.assembly}
+            mv {params.workdir}/final.contigs.fa {output.Coassembly}
 
         # Reformat headers
-            sed -i 's/ /-/g' {output.assembly}
+            sed -i 's/ /-/g' {output.Coassembly}
 
         fi
         """
