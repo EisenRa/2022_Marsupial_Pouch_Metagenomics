@@ -34,7 +34,7 @@ rule all:
 ### Perform Coassemblies on each sample group
 rule Coassembly:
     input:
-        reads = "2_Reads/3_Host_removed/{group}/*_1.fastq.gz"
+        reads = "2_Reads/3_Host_removed/{group}"
     output:
         Coassembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
         r1_cat = temp("3_Outputs/2_Coassemblies/{group}/{group}_1.fastq.gz"),
