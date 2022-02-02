@@ -27,7 +27,7 @@ print(SAMPLE)
 ### Setup the desired outputs
 rule all:
     input:
-#        expand("3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta", group=GROUP),
+        directory("3_Outputs/2_Coassemblies/{group}_QUAST"),
         expand("3_Outputs/3_Coassembly_Mapping/BAMs/{group}_coverM.txt", group=GROUP)
 
 ################################################################################
