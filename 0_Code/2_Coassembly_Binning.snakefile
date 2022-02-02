@@ -90,6 +90,7 @@ rule Coassembly:
                 --verbose \
                 --min-contig-len 1500 \
                 -1 $R1 -2 $R2 \
+                -f \
                 -o {params.workdir}
                 2> {log}
 
