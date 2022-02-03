@@ -81,8 +81,8 @@ rule Coassembly:
         else
 
         # Set up input reads variable for megahit
-        R1=$(for i in 2_Reads/3_Host_removed/Ss/*_1.fastq.gz; do echo $i | tr '\n' ,; done)
-        R2=$(for i in 2_Reads/3_Host_removed/Ss/*_2.fastq.gz; do echo $i | tr '\n' ,; done)
+        R1=$(for i in 2_Reads/3_Host_removed/{wildcards.group}/*_1.fastq.gz; do echo $i | tr '\n' ,; done)
+        R2=$(for i in 2_Reads/3_Host_removed/{wildcards.group}/*_2.fastq.gz; do echo $i | tr '\n' ,; done)
 
         # Run megahit
             megahit \
