@@ -223,7 +223,7 @@ rule metaWRAP_binning:
         for bam in {input}/*.bam; do echo "@" > {params.outdir}/work_files/$(basename ${{bam/.bam/_2.fastq}}); done
 
         #Symlink BAMs for metaWRAP
-        for bam in {input}/*.bam; do ln -s $bam {params.outdir}/work_files/$(basename $bam); done
+        for bam in {input}/*.bam; do ln -s `pwd`/$bam {params.outdir}/work_files/$(basename $bam); done
 
         # Run metaWRAP binning
         metawrap binning -o {params.outdir} \
