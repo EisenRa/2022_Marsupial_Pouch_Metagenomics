@@ -239,9 +239,9 @@ rule metaWRAP_binning:
 ### Automatically refine bins using metaWRAP's refinement module
 rule metaWRAP_refinement:
     input:
-        concoct = "3_Outputs/3_Coassembly_Mapping/Binning/{group}/concoct_bins",
-        maxbin2 = "3_Outputs/3_Coassembly_Mapping/Binning/{group}/maxbin2_bins",
-        metabat2 = "3_Outputs/3_Coassembly_Mapping/Binning/{group}/metabat2_bins",
+        concoct = "3_Outputs/4_Binning/{group}/concoct_bins",
+        maxbin2 = "3_Outputs/4_Binning/{group}/maxbin2_bins",
+        metabat2 = "3_Outputs/4_Binning/{group}/metabat2_bins",
     output:
         stats = "3_Outputs/5_Refined_Bins/{group}/{group}_metawrap_70_10_bins.stats",
         contigmap = "3_Outputs/5_Refined_Bins/{group}/{group}_metawrap_70_10_bins.contigs"
