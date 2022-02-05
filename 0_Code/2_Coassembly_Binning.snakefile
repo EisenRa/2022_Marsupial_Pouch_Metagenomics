@@ -162,7 +162,7 @@ rule Coassembly_mapping:
     input:
         bt2_index = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta.rev.2.bt2l"
     output:
-        mapped_bam = "3_Outputs/3_Coassembly_Mapping/BAMs/{group}"
+        directory("3_Outputs/3_Coassembly_Mapping/BAMs/{group}")
     params:
         assembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
         read_dir = "2_Reads/3_Host_removed/{group}"
@@ -178,7 +178,7 @@ rule Coassembly_mapping:
         "Mapping {wildcards.group} samples to coassembly using Bowtie2"
     shell:
         """
-        mkdir -p {output.mapped_bam}
+        mkdir -p {output}
         # Map reads to catted reference using Bowtie2
         for fq1 in {params.read_dir}/*_1.fastq.gz; do \
         bowtie2 \
@@ -187,7 +187,7 @@ rule Coassembly_mapping:
             -x {params.assembly} \
             -1 $fq1 \
             -2 ${{fq1/_1.fastq.gz/_2.fastq.gz}} \
-        | samtools sort -@ {threads} -o {output.mapped_bam}/$(basename ${{fq1/_1.fastq.gz/.bam}}); done
+        | samtools sort -@ {threads} -o {output}/$(basename ${{fq1/_1.fastq.gz/.bam}}); done
         """
 ################################################################################
 ### Bin contigs using metaWRAP's binning module
@@ -195,11 +195,11 @@ rule metaWRAP_binning:
     input:
         "3_Outputs/3_Coassembly_Mapping/BAMs/{group}"
     output:
-        concoct = "3_Outputs/3_Coassembly_Mapping/Binning/{group}/concoct_bins",
-        maxbin2 = "3_Outputs/3_Coassembly_Mapping/Binning/{group}/maxbin2_bins",
-        metabat2 = "3_Outputs/3_Coassembly_Mapping/Binning/{group}/metabat2_bins",
+        concoct = "3_Outputs/4_Binning/{group}/concoct_bins",
+        maxbin2 = "3_Outputs/4_Binning/{group}/maxbin2_bins",
+        metabat2 = "3_Outputs/4_Binning/{group}/metabat2_bins",
     params:
-        outdir = "3_Outputs/3_Coassembly_Mapping/Binning/{group}/Binning",
+        outdir = "3_Outputs/4_Binning/{group}",
         assembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
         memory = "180"
     conda:
@@ -215,7 +215,7 @@ rule metaWRAP_binning:
     shell:
         """
         # Create dummy fastq/assembly files to trick metaWRAP into running without mapping
-        mkdir {params.outdir}/work_files
+        mkdir -p {params.outdir}/work_files
 
         touch {params.outdir}/work_files/assembly.fa.bwt
 
@@ -243,10 +243,10 @@ rule metaWRAP_refinement:
         maxbin2 = "3_Outputs/3_Coassembly_Mapping/Binning/{group}/maxbin2_bins",
         metabat2 = "3_Outputs/3_Coassembly_Mapping/Binning/{group}/metabat2_bins",
     output:
-        stats = "3_Outputs/3_Coassembly_Mapping/Refined_Bins/{group}/{group}_metawrap_70_10_bins.stats",
-        contigmap = "3_Outputs/3_Coassembly_Mapping/Refined_Bins/{group}/{group}_metawrap_70_10_bins.contigs"
+        stats = "3_Outputs/5_Refined_Bins/{group}/{group}_metawrap_70_10_bins.stats",
+        contigmap = "3_Outputs/5_Refined_Bins/{group}/{group}_metawrap_70_10_bins.contigs"
     params:
-        outdir = "3_Outputs/3_Coassembly_Mapping/Refined_Bins/{group}",
+        outdir = "3_Outputs/5_Refined_Bins/{group}",
         memory = "180",
         group = "{group}"
     conda:
@@ -281,9 +281,9 @@ rule metaWRAP_refinement:
 ### Calculate the number of reads that mapped to coassemblies
 rule coverM_assembly:
     input:
-        "3_Outputs/3_Coassembly_Mapping/Refined_Bins/{group}/{group}_metawrap_70_10_bins.stats"
+        "3_Outputs/5_Refined_Bins/{group}/{group}_metawrap_70_10_bins.stats"
     output:
-        "3_Outputs/3_Coassembly_Mapping/BAMs/{group}_coverM.txt"
+        "3_Outputs/6_CoverM/{group}_assembly_coverM.txt"
     params:
         mapped_bams = "3_Outputs/3_Coassembly_Mapping/BAMs/{group}",
         assembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
@@ -291,7 +291,7 @@ rule coverM_assembly:
     conda:
         "2_Assembly_Binning.yaml"
     threads:
-        8
+        40
     benchmark:
         "3_Outputs/0_Logs/{group}_coassembly_bin_refinement.benchmark.tsv"
     log:
