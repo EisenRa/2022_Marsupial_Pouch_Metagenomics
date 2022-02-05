@@ -27,9 +27,9 @@ print(SAMPLE)
 ### Setup the desired outputs
 rule all:
     input:
-        expand("3_Outputs/2_Coassemblies/{group}_QUAST", group=GROUP),
-        expand("3_Outputs/3_Coassembly_Mapping/BAMs/{group}_coverM.txt", group=GROUP)
-
+        # expand("3_Outputs/2_Coassemblies/{group}_QUAST", group=GROUP),
+        # expand("3_Outputs/3_Coassembly_Mapping/BAMs/{group}_coverM.txt", group=GROUP),
+        expand("3_Outputs/6_CoverM/{group}_assembly_coverM.txt", group=GROUP)
 ################################################################################
 ### Perform Coassemblies on each sample group
 rule Coassembly:
