@@ -186,7 +186,7 @@ rule Coassembly_mapping:
             -x {params.assembly} \
             -1 $fq1 \
             -2 ${{fq1/_1.fastq.gz/_2.fastq.gz}} \
-        | samtools view -@ {threads} -o {output.mapped_bam}/${{fq1/_1.fastq.gz/.bam}} -; done
+        | samtools view -@ {threads} -o {output.mapped_bam}/$(basename ${{fq1/_1.fastq.gz/.bam}}) -; done
         """
 ################################################################################
 ### Bin contigs using metaWRAP's binning module
