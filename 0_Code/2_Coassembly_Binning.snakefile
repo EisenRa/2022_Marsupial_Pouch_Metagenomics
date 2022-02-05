@@ -200,11 +200,11 @@ rule metaWRAP_binning:
     params:
         outdir = "3_Outputs/3_Coassembly_Mapping/Binning/{group}/Binning",
         assembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
-        memory = "16"
+        memory = "180"
     conda:
         "2_MetaWRAP.yaml"
     threads:
-        8
+        40
     benchmark:
         "3_Outputs/0_Logs/{group}_coassembly_binning.benchmark.tsv"
     log:
@@ -246,12 +246,12 @@ rule metaWRAP_refinement:
         contigmap = "3_Outputs/3_Coassembly_Mapping/Refined_Bins/{group}/{group}_metawrap_70_10_bins.contigs"
     params:
         outdir = "3_Outputs/3_Coassembly_Mapping/Refined_Bins/{group}",
-        memory = "16",
+        memory = "180",
         group = "{group}"
     conda:
         "2_MetaWRAP.yaml"
     threads:
-        8
+        40
     benchmark:
         "3_Outputs/0_Logs/{group}_coassembly_bin_refinement.benchmark.tsv"
     log:
