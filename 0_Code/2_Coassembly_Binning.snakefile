@@ -178,6 +178,7 @@ rule Coassembly_mapping:
         "Mapping {wildcards.group} samples to coassembly using Bowtie2"
     shell:
         """
+        mkdir -p {output.mapped_bam}
         # Map reads to catted reference using Bowtie2
         for fq1 in {params.read_dir}/*_1.fastq.gz; do \
         bowtie2 \
