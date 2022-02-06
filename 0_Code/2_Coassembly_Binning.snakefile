@@ -162,8 +162,9 @@ rule Coassembly_mapping:
     input:
         bt2_index = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta.rev.2.bt2l"
     output:
-        directory("3_Outputs/3_Coassembly_Mapping/BAMs/{group}")
+        "3_Outputs/3_Coassembly_Mapping/BAMs/{group}/Done"
     params:
+        outdir = directory("3_Outputs/3_Coassembly_Mapping/BAMs/{group}"),
         assembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
         read_dir = "2_Reads/3_Host_removed/{group}"
     conda:
@@ -188,12 +189,15 @@ rule Coassembly_mapping:
             -1 $fq1 \
             -2 ${{fq1/_1.fastq.gz/_2.fastq.gz}} \
         | samtools sort -@ {threads} -o {output}/$(basename ${{fq1/_1.fastq.gz/.bam}}); done
+
+        #Create output file for snakemake
+        touch {output}
         """
 ################################################################################
 ### Bin contigs using metaWRAP's binning module
 rule metaWRAP_binning:
     input:
-        "3_Outputs/3_Coassembly_Mapping/BAMs/{group}"
+        "3_Outputs/3_Coassembly_Mapping/BAMs/{group}/Done"
     output:
         concoct = directory("3_Outputs/4_Binning/{group}/concoct_bins"),
         maxbin2 = directory("3_Outputs/4_Binning/{group}/maxbin2_bins"),
@@ -240,9 +244,9 @@ rule metaWRAP_binning:
 ### Automatically refine bins using metaWRAP's refinement module
 rule metaWRAP_refinement:
     input:
-        concoct = "3_Outputs/4_Binning/{group}/concoct_bins",
-        maxbin2 = "3_Outputs/4_Binning/{group}/maxbin2_bins",
-        metabat2 = "3_Outputs/4_Binning/{group}/metabat2_bins",
+        concoct = directory("3_Outputs/4_Binning/{group}/concoct_bins"),
+        maxbin2 = directory("3_Outputs/4_Binning/{group}/maxbin2_bins"),
+        metabat2 = directory("3_Outputs/4_Binning/{group}/metabat2_bins"),
     output:
         stats = "3_Outputs/5_Refined_Bins/{group}/{group}_metawrap_70_10_bins.stats",
         contigmap = "3_Outputs/5_Refined_Bins/{group}/{group}_metawrap_70_10_bins.contigs"
