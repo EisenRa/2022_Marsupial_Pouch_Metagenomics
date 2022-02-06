@@ -230,6 +230,7 @@ rule metaWRAP_binning:
             -t {threads} \
             -m {params.memory} \
             -a {params.assembly} \
+            -l 1500 \
             --metabat2 \
             --maxbin2 \
             --concoct \
