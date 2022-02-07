@@ -199,11 +199,11 @@ rule metaWRAP_binning:
     input:
         "3_Outputs/3_Coassembly_Mapping/BAMs/{group}/Done.txt"
     output:
-        concoct = directory("3_Outputs/4_Binning/{group}/concoct_bins"),
-        maxbin2 = directory("3_Outputs/4_Binning/{group}/maxbin2_bins"),
-        metabat2 = directory("3_Outputs/4_Binning/{group}/metabat2_bins"),
         done = "3_Outputs/4_Binning/{group}/Done.txt"
     params:
+        concoct = "3_Outputs/4_Binning/{group}/concoct_bins",
+        maxbin2 = "3_Outputs/4_Binning/{group}/maxbin2_bins",
+        metabat2 = "3_Outputs/4_Binning/{group}/metabat2_bins",
         outdir = "3_Outputs/4_Binning/{group}",
         assembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
         memory = "180"
@@ -250,12 +250,12 @@ rule metaWRAP_refinement:
     input:
         "3_Outputs/4_Binning/{group}/Done.txt"
     output:
-        concoct = directory("3_Outputs/4_Binning/{group}/concoct_bins"),
-        maxbin2 = directory("3_Outputs/4_Binning/{group}/maxbin2_bins"),
-        metabat2 = directory("3_Outputs/4_Binning/{group}/metabat2_bins"),
         stats = "3_Outputs/5_Refined_Bins/{group}/{group}_metawrap_70_10_bins.stats",
         contigmap = "3_Outputs/5_Refined_Bins/{group}/{group}_metawrap_70_10_bins.contigs"
     params:
+        concoct = "3_Outputs/4_Binning/{group}/concoct_bins",
+        maxbin2 = "3_Outputs/4_Binning/{group}/maxbin2_bins",
+        metabat2 = "3_Outputs/4_Binning/{group}/metabat2_bins",
         outdir = "3_Outputs/5_Refined_Bins/{group}",
         memory = "180",
         group = "{group}"
@@ -275,9 +275,9 @@ rule metaWRAP_refinement:
             -m {params.memory} \
             -t {threads} \
             -o {params.outdir} \
-            -A {output.concoct} \
-            -B {output.maxbin2} \
-            -C {output.metabat2} \
+            -A {params.concoct} \
+            -B {params.maxbin2} \
+            -C {params.metabat2} \
             -c 70 \
             -x 10
 
