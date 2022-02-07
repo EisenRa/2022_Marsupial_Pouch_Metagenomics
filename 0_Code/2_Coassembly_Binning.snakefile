@@ -275,9 +275,9 @@ rule metaWRAP_refinement:
             -m {params.memory} \
             -t {threads} \
             -o {params.outdir} \
-            -A {input.concoct} \
-            -B {input.maxbin2} \
-            -C {input.metabat2} \
+            -A {params.concoct} \
+            -B {params.maxbin2} \
+            -C {params.metabat2} \
             -c 70 \
             -x 10
 
