@@ -162,7 +162,7 @@ rule Coassembly_mapping:
     input:
         bt2_index = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta.rev.2.bt2l"
     output:
-        "3_Outputs/3_Coassembly_Mapping/BAMs/{group}/Done.txt"
+        directory("3_Outputs/3_Coassembly_Mapping/BAMs/{group}/Complete")
     params:
         outdir = directory("3_Outputs/3_Coassembly_Mapping/BAMs/{group}"),
         assembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
@@ -191,13 +191,13 @@ rule Coassembly_mapping:
         | samtools sort -@ {threads} -o {params.outdir}/$(basename ${{fq1/_1.fastq.gz/.bam}}); done
 
         #Create output file for snakemake
-        echo "Mapping done" > {output}
+        mkdir {output}
         """
 ################################################################################
 ### Bin contigs using metaWRAP's binning module
 rule metaWRAP_binning:
     input:
-        "3_Outputs/3_Coassembly_Mapping/BAMs/{group}/Done.txt"
+        "3_Outputs/3_Coassembly_Mapping/BAMs/{group}/Complete"
     output:
         "3_Outputs/4_Binning/{group}/Done.txt"
     params:
