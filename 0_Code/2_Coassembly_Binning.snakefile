@@ -292,7 +292,9 @@ rule coverM_assembly:
     params:
         mapped_bams = "3_Outputs/3_Coassembly_Mapping/BAMs/{group}",
         assembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
-        memory = "16",
+        binning_files = "3_Outputs/4_Binning/{group}",
+        refinement_files = "3_Outputs/5_Refined_Bins/{group}",
+        memory = "180",
     conda:
         "2_Assembly_Binning.yaml"
     threads:
@@ -312,4 +314,13 @@ rule coverM_assembly:
             -t {threads} \
             --min-covered-fraction 0 \
             > {output}
+
+        # Clean up metaWRAP temp files
+        rm -r {params.binning_files}/work_files
+        rm {params.binning_files}/*/*.fa
+        rm -r {params.refinement_files}/work_files
+        pigz -p {threads} {params.refinement_files}/concoct_bins/*
+        pigz -p {threads} {params.refinement_files}/metabat2_bins/*
+        pigz -p {threads} {params.refinement_files}/maxbin2_bins/*
+
         """
