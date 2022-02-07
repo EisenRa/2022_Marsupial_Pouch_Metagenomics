@@ -191,7 +191,7 @@ rule Coassembly_mapping:
         | samtools sort -@ {threads} -o {params.outdir}/$(basename ${{fq1/_1.fastq.gz/.bam}}); done
 
         #Create output file for snakemake
-        touch {output}
+        echo "Mapping done" > {output}
         """
 ################################################################################
 ### Bin contigs using metaWRAP's binning module
@@ -202,6 +202,7 @@ rule metaWRAP_binning:
         concoct = directory("3_Outputs/4_Binning/{group}/concoct_bins"),
         maxbin2 = directory("3_Outputs/4_Binning/{group}/maxbin2_bins"),
         metabat2 = directory("3_Outputs/4_Binning/{group}/metabat2_bins"),
+        done = "3_Outputs/4_Binning/{group}/Done.txt"
     params:
         outdir = "3_Outputs/4_Binning/{group}",
         assembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
@@ -239,15 +240,19 @@ rule metaWRAP_binning:
             --maxbin2 \
             --concoct \
         {params.outdir}/work_files/*_1.fastq {params.outdir}/work_files/*_2.fastq
+
+        # Create dummy file for refinement input
+        echo "Binning complete" > {output.done}
         """
 ################################################################################
 ### Automatically refine bins using metaWRAP's refinement module
 rule metaWRAP_refinement:
     input:
-        concoct = directory("3_Outputs/4_Binning/{group}/concoct_bins"),
-        maxbin2 = directory("3_Outputs/4_Binning/{group}/maxbin2_bins"),
-        metabat2 = directory("3_Outputs/4_Binning/{group}/metabat2_bins"),
+        "3_Outputs/4_Binning/{group}/Done.txt"
     output:
+        concoct = "3_Outputs/4_Binning/{group}/concoct_bins",
+        maxbin2 = "3_Outputs/4_Binning/{group}/maxbin2_bins",
+        metabat2 = "3_Outputs/4_Binning/{group}/metabat2_bins",
         stats = "3_Outputs/5_Refined_Bins/{group}/{group}_metawrap_70_10_bins.stats",
         contigmap = "3_Outputs/5_Refined_Bins/{group}/{group}_metawrap_70_10_bins.contigs"
     params:
