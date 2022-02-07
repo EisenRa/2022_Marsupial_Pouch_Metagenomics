@@ -250,9 +250,9 @@ rule metaWRAP_refinement:
     input:
         "3_Outputs/4_Binning/{group}/Done.txt"
     output:
-        concoct = "3_Outputs/4_Binning/{group}/concoct_bins",
-        maxbin2 = "3_Outputs/4_Binning/{group}/maxbin2_bins",
-        metabat2 = "3_Outputs/4_Binning/{group}/metabat2_bins",
+        concoct = directory("3_Outputs/4_Binning/{group}/concoct_bins"),
+        maxbin2 = directory("3_Outputs/4_Binning/{group}/maxbin2_bins"),
+        metabat2 = directory("3_Outputs/4_Binning/{group}/metabat2_bins"),
         stats = "3_Outputs/5_Refined_Bins/{group}/{group}_metawrap_70_10_bins.stats",
         contigmap = "3_Outputs/5_Refined_Bins/{group}/{group}_metawrap_70_10_bins.contigs"
     params:
@@ -275,9 +275,9 @@ rule metaWRAP_refinement:
             -m {params.memory} \
             -t {threads} \
             -o {params.outdir} \
-            -A {params.concoct} \
-            -B {params.maxbin2} \
-            -C {params.metabat2} \
+            -A {output.concoct} \
+            -B {output.maxbin2} \
+            -C {output.metabat2} \
             -c 70 \
             -x 10
 
