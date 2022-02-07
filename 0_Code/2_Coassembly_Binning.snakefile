@@ -199,7 +199,7 @@ rule metaWRAP_binning:
     input:
         "3_Outputs/3_Coassembly_Mapping/BAMs/{group}/Done.txt"
     output:
-        done = "3_Outputs/4_Binning/{group}/Done.txt"
+        "3_Outputs/4_Binning/{group}/Done.txt"
     params:
         concoct = "3_Outputs/4_Binning/{group}/concoct_bins",
         maxbin2 = "3_Outputs/4_Binning/{group}/maxbin2_bins",
@@ -242,7 +242,7 @@ rule metaWRAP_binning:
         {params.outdir}/work_files/*_1.fastq {params.outdir}/work_files/*_2.fastq
 
         # Create dummy file for refinement input
-        echo "Binning complete" > {output.done}
+        echo "Binning complete" > {output}
         """
 ################################################################################
 ### Automatically refine bins using metaWRAP's refinement module
