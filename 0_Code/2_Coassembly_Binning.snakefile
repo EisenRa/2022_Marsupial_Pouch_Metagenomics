@@ -321,9 +321,9 @@ rule coverM_assembly:
             > {output}
 
         # Clean up metaWRAP temp files
-        rm -r {params.binning_files}/work_files
-        rm {params.binning_files}/*/*.fa
-        rm -r {params.refinement_files}/work_files
+        rm -rf {params.binning_files}/work_files
+        rm -f {params.binning_files}/*/*.fa
+        rm -rf {params.refinement_files}/work_files
         pigz -p {threads} {params.refinement_files}/concoct_bins/*
         pigz -p {threads} {params.refinement_files}/metabat2_bins/*
         pigz -p {threads} {params.refinement_files}/maxbin2_bins/*
