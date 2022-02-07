@@ -188,7 +188,7 @@ rule Coassembly_mapping:
             -x {params.assembly} \
             -1 $fq1 \
             -2 ${{fq1/_1.fastq.gz/_2.fastq.gz}} \
-        | samtools sort -@ {threads} -o {output}/$(basename ${{fq1/_1.fastq.gz/.bam}}); done
+        | samtools sort -@ {threads} -o {params.outdir}/$(basename ${{fq1/_1.fastq.gz/.bam}}); done
 
         #Create output file for snakemake
         touch {output}
