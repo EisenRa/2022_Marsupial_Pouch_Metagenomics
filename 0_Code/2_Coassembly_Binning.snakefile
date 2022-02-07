@@ -162,7 +162,7 @@ rule Coassembly_mapping:
     input:
         bt2_index = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta.rev.2.bt2l"
     output:
-        "3_Outputs/3_Coassembly_Mapping/BAMs/{group}/Done"
+        "3_Outputs/3_Coassembly_Mapping/BAMs/{group}/Done.txt"
     params:
         outdir = directory("3_Outputs/3_Coassembly_Mapping/BAMs/{group}"),
         assembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
@@ -197,7 +197,7 @@ rule Coassembly_mapping:
 ### Bin contigs using metaWRAP's binning module
 rule metaWRAP_binning:
     input:
-        "3_Outputs/3_Coassembly_Mapping/BAMs/{group}/Done"
+        "3_Outputs/3_Coassembly_Mapping/BAMs/{group}/Done.txt"
     output:
         concoct = directory("3_Outputs/4_Binning/{group}/concoct_bins"),
         maxbin2 = directory("3_Outputs/4_Binning/{group}/maxbin2_bins"),
