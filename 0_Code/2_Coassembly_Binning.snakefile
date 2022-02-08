@@ -204,6 +204,7 @@ rule metaWRAP_binning:
         maxbin2 = "3_Outputs/4_Binning/{group}/maxbin2_bins",
         metabat2 = "3_Outputs/4_Binning/{group}/metabat2_bins",
         outdir = "3_Outputs/4_Binning/{group}",
+        bams = "3_Outputs/3_Coassembly_Mapping/BAMs/{group}",
         assembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
         memory = "180"
     conda:
@@ -223,11 +224,11 @@ rule metaWRAP_binning:
 
         touch {params.outdir}/work_files/assembly.fa.bwt
 
-        for bam in {input}/*.bam; do echo "@" > {params.outdir}/work_files/$(basename ${{bam/.bam/_1.fastq}}); done
-        for bam in {input}/*.bam; do echo "@" > {params.outdir}/work_files/$(basename ${{bam/.bam/_2.fastq}}); done
+        for bam in {params.bams}/*.bam; do echo "@" > {params.outdir}/work_files/$(basename ${{bam/.bam/_1.fastq}}); done
+        for bam in {params.bams}/*.bam; do echo "@" > {params.outdir}/work_files/$(basename ${{bam/.bam/_2.fastq}}); done
 
         #Symlink BAMs for metaWRAP
-        for bam in {input}/*.bam; do ln -s `pwd`/$bam {params.outdir}/work_files/$(basename $bam); done
+        for bam in {params.bams}/*.bam; do ln -s `pwd`/$bam {params.outdir}/work_files/$(basename $bam); done
 
         # Run metaWRAP binning
         metawrap binning -o {params.outdir} \
