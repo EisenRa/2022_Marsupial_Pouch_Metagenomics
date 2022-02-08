@@ -179,7 +179,6 @@ rule Coassembly_mapping:
         "Mapping {wildcards.group} samples to coassembly using Bowtie2"
     shell:
         """
-        mkdir -p {output}
         # Map reads to catted reference using Bowtie2
         for fq1 in {params.read_dir}/*_1.fastq.gz; do \
         bowtie2 \
@@ -191,7 +190,7 @@ rule Coassembly_mapping:
         | samtools sort -@ {threads} -o {params.outdir}/$(basename ${{fq1/_1.fastq.gz/.bam}}); done
 
         #Create output file for snakemake
-        mkdir {output}
+        mkdir -p {output}
         """
 ################################################################################
 ### Bin contigs using metaWRAP's binning module
