@@ -27,9 +27,9 @@ print(SAMPLE)
 ### Setup the desired outputs
 rule all:
     input:
-#        expand("3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta", group=GROUP),
-        expand("3_Outputs/3_Coassembly_Mapping/BAMs/{group}_coverM.txt", group=GROUP)
-
+        # expand("3_Outputs/2_Coassemblies/{group}_QUAST", group=GROUP),
+        # expand("3_Outputs/3_Coassembly_Mapping/BAMs/{group}_coverM.txt", group=GROUP),
+        expand("3_Outputs/6_CoverM/{group}_assembly_coverM.txt", group=GROUP)
 ################################################################################
 ### Perform Coassemblies on each sample group
 rule Coassembly:
@@ -37,10 +37,11 @@ rule Coassembly:
         reads = "2_Reads/3_Host_removed/{group}"
     output:
         Coassembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
-        r1_cat = temp("3_Outputs/2_Coassemblies/{group}/{group}_1.fastq.gz"),
-        r2_cat = temp("3_Outputs/2_Coassemblies/{group}/{group}_2.fastq.gz")
     params:
         workdir = "3_Outputs/2_Coassemblies/{group}",
+        r1_cat = temp("3_Outputs/2_Coassemblies/{group}/{group}_1.fastq.gz"),
+        r2_cat = temp("3_Outputs/2_Coassemblies/{group}/{group}_2.fastq.gz"),
+        assembler = expand("{assembler}", assembler=config['assembler']),
     conda:
         "2_Assembly_Binning.yaml"
     threads:
@@ -50,23 +51,56 @@ rule Coassembly:
     log:
         "3_Outputs/0_Logs/{group}_coassembly.log"
     message:
-        "Coassembling {wildcards.group} using metaspades"
+        "Coassembling {wildcards.group} using {params.assembler}"
     shell:
         """
+        # Set up assembler variable from config file
+        export assembler={config[assembler]}
+
+        if [ "$assembler" == "metaspades" ]
+        then
+
         # Concatenate reads from the same group for Coassembly
-        cat {input.reads}/*_1.fastq.gz > {output.r1_cat}
-        cat {input.reads}/*_1.fastq.gz > {output.r2_cat}
+        cat {input.reads}/*_1.fastq.gz > {params.r1_cat}
+        cat {input.reads}/*_2.fastq.gz > {params.r2_cat}
 
         # Run metaspades
-        metaspades.py \
-            -t {threads} \
-            -k 21,33,55,77,99 \
-            -1 {output.r1_cat} -2 {output.r2_cat} \
-            -o {params.workdir}
-        2> {log}
+            metaspades.py \
+                -t {threads} \
+                -k 21,33,55,77,99 \
+                -1 {params.r1_cat} -2 {params.r2_cat} \
+                -o {params.workdir}
+                2> {log}
+
+        # Remove contigs shorter than 1,500 bp
+            reformat.sh
+                in={params.workdir}/scaffolds.fasta \
+                out={output.Coassembly} \
+                minlength=1500
+
+        else
+
+        # Set up input reads variable for megahit
+        R1=$(for i in 2_Reads/3_Host_removed/{wildcards.group}/*_1.fastq.gz; do echo $i | tr '\n' ,; done)
+        R2=$(for i in 2_Reads/3_Host_removed/{wildcards.group}/*_2.fastq.gz; do echo $i | tr '\n' ,; done)
+
+        # Run megahit
+            megahit \
+                -t {threads} \
+                --verbose \
+                --min-contig-len 1500 \
+                -1 $R1 -2 $R2 \
+                -f \
+                -o {params.workdir}
+                2> {log}
 
         # Move the Coassembly to final destination
-        mv {params.workdir}/scaffolds.fasta {output.Coassembly}
+            mv {params.workdir}/final.contigs.fa {output.Coassembly}
+
+        # Reformat headers
+            sed -i 's/ /-/g' {output.Coassembly}
+
+        fi
         """
 ################################################################################
 ### Create QUAST reports of coassemblies
@@ -74,13 +108,13 @@ rule QUAST:
     input:
         Coassembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta"
     output:
-        report = "3_Outputs/2_Coassemblies/{group}_QUAST/report.html",
+        report = directory("3_Outputs/2_Coassemblies/{group}_QUAST"),
     conda:
         "2_Assembly_Binning.yaml"
     threads:
         20
     message:
-        "Running QUAST on {wildcards.group} coassembly"
+        "Running -QUAST on {wildcards.group} coassembly"
     shell:
         """
         # Run QUAST
@@ -88,12 +122,17 @@ rule QUAST:
             -o {output.report} \
             --threads {threads} \
             {input.Coassembly}
+
+        # Rename QUAST files
+        for i in {output.report}/*;
+            do mv $i {output.report}/{wildcards.group}_$(basename $i);
+                done
         """
 ################################################################################
 ### Map reads to the coassemblies
 rule Coassembly_index:
     input:
-        report = "3_Outputs/2_Coassemblies/{group}_QUAST/report.html"
+        report = "3_Outputs/2_Coassemblies/{group}_QUAST/"
     output:
         bt2_index = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta.rev.2.bt2l",
     params:
@@ -123,14 +162,15 @@ rule Coassembly_mapping:
     input:
         bt2_index = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta.rev.2.bt2l"
     output:
-        mapped_bam = "3_Outputs/3_Coassembly_Mapping/BAMs/{group}"
+        directory("3_Outputs/3_Coassembly_Mapping/BAMs/{group}/Complete")
     params:
+        outdir = directory("3_Outputs/3_Coassembly_Mapping/BAMs/{group}"),
         assembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
         read_dir = "2_Reads/3_Host_removed/{group}"
     conda:
         "2_Assembly_Binning.yaml"
     threads:
-        8
+        40
     benchmark:
         "3_Outputs/0_Logs/{group}_coassembly_mapping.benchmark.tsv"
     log:
@@ -147,25 +187,30 @@ rule Coassembly_mapping:
             -x {params.assembly} \
             -1 $fq1 \
             -2 ${{fq1/_1.fastq.gz/_2.fastq.gz}} \
-        | samtools view -@ {threads} -o {output.mapped_bam}/${{fq1/_1.fastq.gz/.bam}} -; done
+        | samtools sort -@ {threads} -o {params.outdir}/$(basename ${{fq1/_1.fastq.gz/.bam}}); done
+
+        #Create output file for snakemake
+        mkdir -p {output}
         """
 ################################################################################
 ### Bin contigs using metaWRAP's binning module
 rule metaWRAP_binning:
     input:
-        "3_Outputs/3_Coassembly_Mapping/BAMs/{group}"
+        "3_Outputs/3_Coassembly_Mapping/BAMs/{group}/Complete"
     output:
-        concoct = "3_Outputs/3_Coassembly_Mapping/Binning/{group}/concoct_bins",
-        maxbin2 = "3_Outputs/3_Coassembly_Mapping/Binning/{group}/maxbin2_bins",
-        metabat2 = "3_Outputs/3_Coassembly_Mapping/Binning/{group}/metabat2_bins",
+        "3_Outputs/4_Binning/{group}/Done.txt"
     params:
-        outdir = "3_Outputs/3_Coassembly_Mapping/Binning/{group}/Binning",
+        concoct = "3_Outputs/4_Binning/{group}/concoct_bins",
+        maxbin2 = "3_Outputs/4_Binning/{group}/maxbin2_bins",
+        metabat2 = "3_Outputs/4_Binning/{group}/metabat2_bins",
+        outdir = "3_Outputs/4_Binning/{group}",
+        bams = "3_Outputs/3_Coassembly_Mapping/BAMs/{group}",
         assembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
-        memory = "16"
+        memory = "180"
     conda:
         "2_MetaWRAP.yaml"
     threads:
-        8
+        40
     benchmark:
         "3_Outputs/0_Logs/{group}_coassembly_binning.benchmark.tsv"
     log:
@@ -175,44 +220,49 @@ rule metaWRAP_binning:
     shell:
         """
         # Create dummy fastq/assembly files to trick metaWRAP into running without mapping
-        mkdir {params.outdir}/work_files
+        mkdir -p {params.outdir}/work_files
 
         touch {params.outdir}/work_files/assembly.fa.bwt
 
-        for bam in {input}/*.bam; do echo "@" > {params.outdir}/work_files/$(basename ${{bam/.bam/_1.fastq}}); done
-        for bam in {input}/*.bam; do echo "@" > {params.outdir}/work_files/$(basename ${{bam/.bam/_2.fastq}}); done
+        for bam in {params.bams}/*.bam; do echo "@" > {params.outdir}/work_files/$(basename ${{bam/.bam/_1.fastq}}); done
+        for bam in {params.bams}/*.bam; do echo "@" > {params.outdir}/work_files/$(basename ${{bam/.bam/_2.fastq}}); done
 
         #Symlink BAMs for metaWRAP
-        for bam in {input}/*.bam; do ln -s $bam {params.outdir}/work_files/$(basename $bam); done
+        for bam in {params.bams}/*.bam; do ln -s `pwd`/$bam {params.outdir}/work_files/$(basename $bam); done
 
         # Run metaWRAP binning
         metawrap binning -o {params.outdir} \
             -t {threads} \
             -m {params.memory} \
             -a {params.assembly} \
+            -l 1500 \
             --metabat2 \
             --maxbin2 \
             --concoct \
         {params.outdir}/work_files/*_1.fastq {params.outdir}/work_files/*_2.fastq
+
+        # Create dummy file for refinement input
+        echo "Binning complete" > {output}
         """
 ################################################################################
 ### Automatically refine bins using metaWRAP's refinement module
 rule metaWRAP_refinement:
     input:
-        concoct = "3_Outputs/3_Coassembly_Mapping/Binning/{group}/concoct_bins",
-        maxbin2 = "3_Outputs/3_Coassembly_Mapping/Binning/{group}/maxbin2_bins",
-        metabat2 = "3_Outputs/3_Coassembly_Mapping/Binning/{group}/metabat2_bins",
+        "3_Outputs/4_Binning/{group}/Done.txt"
     output:
-        stats = "3_Outputs/3_Coassembly_Mapping/Refined_Bins/{group}/{group}_metawrap_70_10_bins.stats",
-        contigmap = "3_Outputs/3_Coassembly_Mapping/Refined_Bins/{group}/{group}_metawrap_70_10_bins.contigs"
+        stats = "3_Outputs/5_Refined_Bins/{group}/{group}_metawrap_70_10_bins.stats",
+        contigmap = "3_Outputs/5_Refined_Bins/{group}/{group}_metawrap_70_10_bins.contigs"
     params:
-        outdir = "3_Outputs/3_Coassembly_Mapping/Refined_Bins/{group}",
-        memory = "16",
+        concoct = "3_Outputs/4_Binning/{group}/concoct_bins",
+        maxbin2 = "3_Outputs/4_Binning/{group}/maxbin2_bins",
+        metabat2 = "3_Outputs/4_Binning/{group}/metabat2_bins",
+        outdir = "3_Outputs/5_Refined_Bins/{group}",
+        memory = "180",
         group = "{group}"
     conda:
         "2_MetaWRAP.yaml"
     threads:
-        8
+        40
     benchmark:
         "3_Outputs/0_Logs/{group}_coassembly_bin_refinement.benchmark.tsv"
     log:
@@ -225,9 +275,9 @@ rule metaWRAP_refinement:
             -m {params.memory} \
             -t {threads} \
             -o {params.outdir} \
-            -A {input.concoct} \
-            -B {input.maxbin2} \
-            -C {input.metabat2} \
+            -A {params.concoct} \
+            -B {params.maxbin2} \
+            -C {params.metabat2} \
             -c 70 \
             -x 10
 
@@ -241,17 +291,19 @@ rule metaWRAP_refinement:
 ### Calculate the number of reads that mapped to coassemblies
 rule coverM_assembly:
     input:
-        "3_Outputs/3_Coassembly_Mapping/Refined_Bins/{group}/{group}_metawrap_70_10_bins.stats"
+        "3_Outputs/5_Refined_Bins/{group}/{group}_metawrap_70_10_bins.stats"
     output:
-        "3_Outputs/3_Coassembly_Mapping/BAMs/{group}_coverM.txt"
+        "3_Outputs/6_CoverM/{group}_assembly_coverM.txt"
     params:
         mapped_bams = "3_Outputs/3_Coassembly_Mapping/BAMs/{group}",
         assembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
-        memory = "16",
+        binning_files = "3_Outputs/4_Binning/{group}",
+        refinement_files = "3_Outputs/5_Refined_Bins/{group}",
+        memory = "180",
     conda:
         "2_Assembly_Binning.yaml"
     threads:
-        8
+        40
     benchmark:
         "3_Outputs/0_Logs/{group}_coassembly_bin_refinement.benchmark.tsv"
     log:
@@ -267,4 +319,13 @@ rule coverM_assembly:
             -t {threads} \
             --min-covered-fraction 0 \
             > {output}
+
+        # Clean up metaWRAP temp files
+        rm -rf {params.binning_files}/work_files
+        rm -f {params.binning_files}/*/*.fa
+        rm -rf {params.refinement_files}/work_files
+        pigz -p {threads} {params.refinement_files}/concoct_bins/*
+        pigz -p {threads} {params.refinement_files}/metabat2_bins/*
+        pigz -p {threads} {params.refinement_files}/maxbin2_bins/*
+
         """
