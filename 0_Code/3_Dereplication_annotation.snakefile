@@ -1,8 +1,8 @@
 ################################################################################
 ################################################################################
 ################################################################################
-# Snakefile for coassembly, binning, and refinement of MAGs
-# Raphael Eisenhofer 11/2021
+# Snakefile for MAG dereplication, taxonomic and functional annotation.
+# Raphael Eisenhofer 02/2022
 #
 ################################################################################
 ################################################################################
@@ -13,92 +13,64 @@ import os
 from glob import glob
 
 GROUP = [os.path.basename(dir)
-         for dir in glob(f"2_Reads/3_Host_removed/*")]
+         for dir in glob(f"3_Outputs/5_Refined_Bins/dRep_groups/*")]
 
-SAMPLE = [os.path.relpath(fn, "2_Reads/3_Host_removed").replace("_non_host_1.fastq.gz", "")
+MAGS = [os.path.relpath(fn, "3_Outputs/5_Refined_Bins/").replace(".fa.gz", "")
             for group in GROUP
-            for fn in glob(f"2_Reads/3_Host_removed/{group}/*_1.fastq.gz")]
+            for fn in glob(f"3_Outputs/5_Refined_Bins/{group}/bins/*.fa.gz")]
 
 print("Detected these sample groups:")
 print(GROUP)
-print("Detected the following samples:")
-print(SAMPLE)
+print("Detected this many MAGs:")
+len(MAGS)
 ################################################################################
 ### Setup the desired outputs
 rule all:
     input:
         expand("3_Outputs/6_CoverM/{group}_assembly_coverM.txt", group=GROUP)
 ################################################################################
-### Perform Coassemblies on each sample group
-rule Coassembly:
+### Dereplicate refined bins using dRep
+rule dereplication:
     input:
-        reads = "2_Reads/3_Host_removed/{group}"
+        bins = "3_Outputs/5_Refined_Bins/dRep_groups/{group}"
     output:
-        Coassembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
+        drep = "3_Outputs/7_Dereplication/{group}/figures/{group}_Primary_clustering_dendrogram.pdf,
     params:
-        workdir = "3_Outputs/2_Coassemblies/{group}",
-        r1_cat = temp("3_Outputs/2_Coassemblies/{group}/{group}_1.fastq.gz"),
-        r2_cat = temp("3_Outputs/2_Coassemblies/{group}/{group}_2.fastq.gz"),
-        assembler = expand("{assembler}", assembler=config['assembler']),
+        ANI = expand("{ANI}", ANI=config['ANI']),
+        workdir = "3_Outputs/7_Dereplication/{group}"
     conda:
-        "2_Assembly_Binning.yaml"
+        "3_dRep.yaml"
     threads:
         40
     benchmark:
-        "3_Outputs/0_Logs/{group}_coassembly.benchmark.tsv"
+        "3_Outputs/0_Logs/{group}_dRep.benchmark.tsv"
     log:
-        "3_Outputs/0_Logs/{group}_coassembly.log"
+        "3_Outputs/0_Logs/{group}_dRep.log"
     message:
-        "Coassembling {wildcards.group} using {params.assembler}"
+        "Dereplicating bins for {wildcards.group} that are > {params.ANI} percent indentical"
     shell:
         """
-        # Set up assembler variable from config file
-        export assembler={config[assembler]}
+        # Parse/collate metawrap stats files for compatibility with dRep genomeinfo:
+        for i in {input.bins}/
 
-        if [ "$assembler" == "metaspades" ]
-        then
-
-        # Concatenate reads from the same group for Coassembly
-        cat {input.reads}/*_1.fastq.gz > {params.r1_cat}
-        cat {input.reads}/*_2.fastq.gz > {params.r2_cat}
-
-        # Run metaspades
-            metaspades.py \
-                -t {threads} \
-                -k 21,33,55,77,99 \
-                -1 {params.r1_cat} -2 {params.r2_cat} \
-                -o {params.workdir}
+        # Run dRep
+            dRep dereplicate \
+                -p {threads} \
+                -comp 70 \
+                -sa {params.ANI} \
+                -g {input.bins}/bins/*.fa.gz \
+                --genomeInfo {input.bins}/genome_info.csv
                 2> {log}
 
-        # Remove contigs shorter than 1,500 bp
-            reformat.sh
-                in={params.workdir}/scaffolds.fasta \
-                out={output.Coassembly} \
-                minlength=1500
+        # Rename and compress output
+        for bin in {params.workdir}/dereplicated_genomes/*.fa; do
+            mv $bin {params.workdir}/dereplicated_genomes/$(basename {group}_"$bin");
+                done
+        for i in {params.workdir}/figures/*; do
+            mv $i {params.workdir}/figures/$(basename {group}_"$i");
+                done
 
-        else
-
-        # Set up input reads variable for megahit
-        R1=$(for i in 2_Reads/3_Host_removed/{wildcards.group}/*_1.fastq.gz; do echo $i | tr '\n' ,; done)
-        R2=$(for i in 2_Reads/3_Host_removed/{wildcards.group}/*_2.fastq.gz; do echo $i | tr '\n' ,; done)
-
-        # Run megahit
-            megahit \
-                -t {threads} \
-                --verbose \
-                --min-contig-len 1500 \
-                -1 $R1 -2 $R2 \
-                -f \
-                -o {params.workdir}
-                2> {log}
-
-        # Move the Coassembly to final destination
-            mv {params.workdir}/final.contigs.fa {output.Coassembly}
-
-        # Reformat headers
-            sed -i 's/ /-/g' {output.Coassembly}
-
-        fi
+        pigz -p {threads} {paras.workdir}/dereplicated_genomes/*.fa
         """
 ################################################################################
 ### Create QUAST reports of coassemblies
@@ -282,14 +254,8 @@ rule metaWRAP_refinement:
         # Rename metawrap bins to match coassembly group:
         mv {params.outdir}/metawrap_70_10_bins.stats {output.stats}
         mv {params.outdir}/metawrap_70_10_bins.contigs {output.contigmap}
-        sed -i'' '2,$s/bin/{params.group}_bin/g' {output.stats}
-        sed -i'' 's/bin/{params.group}_bin/g' {output.contigmap}
-        for bin in {params.outdir}/metawrap_70_10_bins/*.fa;
-            do mv $bin ${{bin/bin./{params.group}_bin.}};
-                done
-
-        # Compress output bins
-        pigz -p {threads} {params.outdir}/*bins/*.fa
+        sed -i'' '2,$s/bin/bin_{params.group}/g' {output.stats}
+        sed -i'' 's/bin/bin_{params.group}/g' {output.contigmap}
         """
 ################################################################################
 ### Calculate the number of reads that mapped to coassemblies
@@ -328,8 +294,8 @@ rule coverM_assembly:
         rm -rf {params.binning_files}/work_files
         rm -f {params.binning_files}/*/*.fa
         rm -rf {params.refinement_files}/work_files
-
-        # Create directory for dereplication groups:
-        mkdir -p 3_Outputs/5_Refined_Bins/dRep_groups
+        pigz -p {threads} {params.refinement_files}/concoct_bins/*
+        pigz -p {threads} {params.refinement_files}/metabat2_bins/*
+        pigz -p {threads} {params.refinement_files}/maxbin2_bins/*
 
         """

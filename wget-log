@@ -1,13 +1,0 @@
-Will not apply HSTS. The HSTS database must be a regular and non-world-writable file.
-ERROR: could not open HSTS store at '/home/eisenra/.wget-hsts'. HSTS will be disabled.
---2021-10-21 15:52:39--  https://www.ncbi.nlm.nih.gov/nuccore/KJ868118.1?report=fasta
-Resolving www.ncbi.nlm.nih.gov (www.ncbi.nlm.nih.gov)... 130.14.29.110, 2607:f220:41e:4290::110
-Connecting to www.ncbi.nlm.nih.gov (www.ncbi.nlm.nih.gov)|130.14.29.110|:443... connected.
-HTTP request sent, awaiting response... 200 OK
-Length: unspecified [text/html]
-Saving to: ‘KJ868118.1?report=fasta’
-
-KJ868118.1?report=fasta             [<=>                                                    ]       0  --.-KB/s               KJ868118.1?report=fasta             [ <=>                                                   ]  15.08K  64.4KB/s               KJ868118.1?report=fasta             [  <=>                                                  ]  40.00K  85.2KB/s               KJ868118.1?report=fasta             [   <=>                                                 ]  81.85K   171KB/s    in 0.5s    
-
-2021-10-21 15:52:41 (171 KB/s) - ‘KJ868118.1?report=fasta’ saved [83819]
-

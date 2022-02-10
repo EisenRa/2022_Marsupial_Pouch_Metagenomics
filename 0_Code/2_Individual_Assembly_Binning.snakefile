@@ -258,21 +258,20 @@ rule metaWRAP_refinement:
         # Rename metawrap bins to match coassembly group:
         cp {params.outdir}/metawrap_70_10_bins.stats {output.stats}
         cp {params.outdir}/metawrap_70_10_bins.contigs {output.contigmap}
-        sed -i'' '2,$s/bin/bin_{params.sample}/g' {output.stats}
-        sed -i'' 's/bin/bin_{params.sample}/g' {output.contigmap}
+        sed -i'' '2,$s/bin/{params.sample}_bin/g' {output.stats}
+        sed -i'' 's/bin/{params.sample}_bin/g' {output.contigmap}
         for bin in {params.bindir}/*.fa;
-            do mv $bin ${{bin/bin/bin_{params.sample}}};
+            do mv $bin ${{bin/bin./{params.sample}_bin.}};
                 done
 
         # Compress, clean outputs:
-        rm -r {params.binning_wfs}/*_out
-        rm {params.binning_wfs}/assembly*
+        rm -r {params.binning_wfs}
         rm -r {params.refinement_wfs}
-        rm -r {params.outdir}/concoct_bins
-        rm -r {params.outdir}/maxbin2_bins
-        rm -r {params.outdir}/metabat2_bins
+        rm {input.concoct}/*.fa
+        rm {input.maxbin2}/*.fa
+        rm {input.metabat2}/*.fa
 
-        pigz -p {threads} {params.bindir}/*
+        pigz -p {threads} {params.ourdir}/*_bins/*.fa
         """
 ################################################################################
 ### Calculate the number of reads that mapped to coassemblies
