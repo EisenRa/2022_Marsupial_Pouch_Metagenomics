@@ -1,8 +1,5 @@
  name: dRep
  channels:
-    - conda-forge
     - bioconda
-    - defaults
  dependencies:
-    - drep=3.0.0
-    - pigz=2.6
+    - drep
