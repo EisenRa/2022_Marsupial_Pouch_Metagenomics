@@ -150,12 +150,12 @@ rule DRAM_annotate:
         # How many bins?
         count=$(find {params.bins}/ -name '*.fa.gz' -type f|wc -l)
         # How many bins per group (using 5 groups)?
-        groupsize=$'(((count +4) / 5))'
+        groupsize=$(((count +4) / 5))
         # Move bins into separate group folders:
         for group in `seq 1 5`;
             do mkdir -p {params.workdir}/"group$group";
             find {params.bins} -type f | head -n $groupsize |
-            xargs -i mv "{}" {params.workdir}/"group$group"; done
+            xargs -i mv "{{}}" {params.workdir}/"group$group"; done
 
         # Create checkm tsv for input to DRAM:
         echo -e "Bin Id\tCompleteness\tContamination" > {params.workdir}/header.txt
