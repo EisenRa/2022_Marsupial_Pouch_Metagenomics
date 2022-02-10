@@ -51,7 +51,7 @@ rule dereplication:
     shell:
         """
         # Parse/collate metawrap stats files for compatibility with dRep genomeinfo:
-        echo -e "genome,completeness,contamination" > {intput.bins}/header.txt
+        echo -e "genome,completeness,contamination" > {input.bins}/header.txt
         for i in {input.bins}/*.stats;
             do sed '1d;' $i | cut -f 1,2,3 --output-delimiter ',' >> bin_info.txt;
                 done
