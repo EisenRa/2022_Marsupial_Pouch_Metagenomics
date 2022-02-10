@@ -89,6 +89,7 @@ rule gtdbtk:
          "3_Outputs/8_GTDB-tk/{group}/classify/gtdbtk.bac120.summary.tsv"
     params:
         outdir = "3_Outputs/8_GTDB-tk/{group}",
+        bins = "3_Outputs/7_Dereplication/{group}/dereplicated_genomes"
     conda:
         "3_GTDB-tk.yaml"
     threads:
@@ -106,7 +107,7 @@ rule gtdbtk:
 
         # Run GTDB-tk:
         gtdbtk classify_wf \
-        --genome_dir  \
+        --genome_dir {params.bins} \
         --extension "gz" \
         --out_dir {params.outdir} \
         --cpus {threads} \
