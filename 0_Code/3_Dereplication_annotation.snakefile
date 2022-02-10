@@ -110,7 +110,7 @@ rule gtdbtk:
         --extension "gz" \
         --out_dir {params.outdir} \
         --cpus {threads} \
-        --pplacer_cpus 8 \
+        --pplacer_cpus 1 \
         --prefix {wildcards.group}
 
         # Create a merged summary output for DRAM:
