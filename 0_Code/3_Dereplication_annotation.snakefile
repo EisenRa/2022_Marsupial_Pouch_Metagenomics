@@ -150,7 +150,7 @@ rule DRAM_annotate:
         # How many bins?
         count=$(find {params.bins}/ -name '*.fa.gz' -type f|wc -l)
         # How many bins per group (using 5 groups)?
-        groupsize=$(((count +4) / 5))
+        groupsize=$'(((count +4) / 5))'
         # Move bins into separate group folders:
         for group in `seq 1 5`;
             do mkdir -p {params.workdir}/"group$group";
