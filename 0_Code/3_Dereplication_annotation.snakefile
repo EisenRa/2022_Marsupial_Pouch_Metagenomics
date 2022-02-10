@@ -125,11 +125,11 @@ rule gtdbtk:
         """
 ################################################################################
 ### Functionally annotate/distil MAGs with DRAM
-rule DRAM-annotate:
+rule DRAM_annotate:
     input:
         "3_Outputs/8_GTDB-tk/{group}/classify/gtdbtk.bac120.summary.tsv"
     output:
-        "3_Outputs/9_DRAM/{group}/Distillate/{group}_product.html",
+        "3_Outputs/9_DRAM/{group}/Distillate/{group}_product.html"
     params:
         bins = "3_Outputs/7_Dereplication/{group}/dereplicated_genomes",
         workdir = "3_Outputs/9_DRAM/{group}",
