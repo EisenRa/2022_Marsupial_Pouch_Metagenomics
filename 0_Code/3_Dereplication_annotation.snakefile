@@ -159,7 +159,7 @@ rule DRAM_annotate:
 
         # Create checkm tsv for input to DRAM:
         echo -e "Bin Id\tCompleteness\tContamination" > {params.workdir}/header.txt
-        sed '1d;' 3_Outputs/5_Refined_Bins/dRep_groups/{group}/genome_info.csv |
+        sed '1d;' 3_Outputs/5_Refined_Bins/dRep_groups/{wildcards.group}/genome_info.csv |
         tr ',' '\t' > {params.workdir}/bininfo.txt
         cat {params.workdir}/header.txt {params.workdir}/bininfo.txt > {params.workdir}checkm.tsv
 
