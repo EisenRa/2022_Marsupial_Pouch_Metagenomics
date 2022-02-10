@@ -34,7 +34,7 @@ rule dereplication:
     input:
         bins = "3_Outputs/5_Refined_Bins/dRep_groups/{group}"
     output:
-        drep = "3_Outputs/7_Dereplication/{group}/figures/{group}_Primary_clustering_dendrogram.pdf,
+        drep = "3_Outputs/7_Dereplication/{group}/figures/{group}_Primary_clustering_dendrogram.pdf"
     params:
         ANI = expand("{ANI}", ANI=config['ANI']),
         workdir = "3_Outputs/7_Dereplication/{group}"
@@ -51,7 +51,12 @@ rule dereplication:
     shell:
         """
         # Parse/collate metawrap stats files for compatibility with dRep genomeinfo:
-        for i in {input.bins}/
+        echo -e "genome,completeness,contamination" > {intput.bins}/header.txt
+        for i in {input.bins}/*.stats;
+            do sed '1d;' $i | cut -f 1,2,3 --output-delimiter ',' >> bin_info.txt;
+                done
+        cat {input.bins}/header.txt {input.bins}/bin_info.txt > {input.bins}/genome_info.csv
+        rm {input.bins}/*.txt
 
         # Run dRep
             dRep dereplicate \
@@ -73,229 +78,123 @@ rule dereplication:
         pigz -p {threads} {paras.workdir}/dereplicated_genomes/*.fa
         """
 ################################################################################
-### Create QUAST reports of coassemblies
-rule QUAST:
+### Annotate dereplicated MAGs with gtdb-tk taxonomy:
+rule gtdbtk:
     input:
-        Coassembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta"
+        "3_Outputs/7_Dereplication/{group}/figures/{group}_Primary_clustering_dendrogram.pdf"
     output:
-        report = directory("3_Outputs/2_Coassemblies/{group}_QUAST"),
+         "3_Outputs/8_GTDB-tk/{group}/classify/gtdbtk.bac120.summary.tsv"
+    params:
+        outdir = "3_Outputs/8_GTDB-tk/{group}",
     conda:
-        "2_Assembly_Binning.yaml"
+        "3_GTDB-tk.yaml"
     threads:
-        20
+        40
+    benchmark:
+        "3_Outputs/0_Logs/{group}_gtdbtk.benchmark.tsv"
+    log:
+        "3_Outputs/0_Logs/{group}_gtdbtk.log"
     message:
-        "Running -QUAST on {wildcards.group} coassembly"
+        "Running gtdb-tk on {wildcards.group} MAGs"
     shell:
         """
-        # Run QUAST
-        quast \
-            -o {output.report} \
-            --threads {threads} \
-            {input.Coassembly}
+        # Specify path to reference data:
+        GTDBTK_DATA_PATH=/home/projects/ku-cbd/people/rapeis/0_DBs/release202/
 
-        # Rename QUAST files
-        for i in {output.report}/*;
-            do mv $i {output.report}/{wildcards.group}_$(basename $i);
+        # Run GTDB-tk:
+        gtdbtk classify_wf \
+        --genome_dir  \
+        --extension "gz" \
+        --out_dir {params.outdir} \
+        --cpus {threads} \
+        --pplacer_cpus 8 \
+        --prefix {group}
+
+        # Create a merged summary output for DRAM:
+        if [ -s "{params.outdir}/classify/gtdbtk.ar122.summary.tsv" ]
+        then
+        sed '1d;' {params.outdir}/classify/gtdbtk.ar122.summary.tsv > {params.outdir}/ar122.tsv
+        cat {output} {params.outdir}/ar122.tsv > {params.outdir}/gtdbtk_combined_summary.tsv
+        # Otherwise, just use the bacterial summary (if no archaeal bins)
+        else
+        cat {output} > {params.outdir}/gtdbtk_combined_summary.tsv
+        fi
+
+        #Clean up
+        rm ar122.tsv
+        """
+################################################################################
+### Functionally annotate/distil MAGs with DRAM
+rule DRAM-annotate:
+    input:
+        "3_Outputs/8_GTDB-tk/{group}/classify/gtdbtk.bac120.summary.tsv"
+    output:
+        "3_Outputs/9_DRAM/{group}/Distillate/{group}_product.html",
+    params:
+        bins = "3_Outputs/7_Dereplication/{group}/dereplicated_genomes",
+        workdir = "3_Outputs/9_DRAM/{group}",
+        gtdbtax = "3_Outputs/8_GTDB-tk/{group}/gtdbtk_combined_summary.tsv",
+    conda:
+        "3_DRAM.yaml"
+    threads:
+        40
+    benchmark:
+        "3_Outputs/0_Logs/{group}_DRAM.benchmark.tsv"
+    log:
+        "3_Outputs/0_Logs/{group}_DRAM.log"
+    message:
+        "Functionally annotating {wildcards.group} MAGs using DRAM"
+    shell:
+        """
+        ## Split bins into groups to parallelize DRAM:
+        # How many bins?
+        count=$(find {params.bins}/ -name '*.fa.gz' -type f|wc -l)
+        # How many bins per group (using 5 groups)?
+        groupsize=$(((count +4) / 5))
+        # Move bins into separate group folders:
+        for group in `seq 1 5`;
+            do mkdir -p {params.workdir}/"group$group";
+            find {params.bins} -type f | head -n $groupsize |
+            xargs -i mv "{}" {params.workdir}/"group$group"; done
+
+        # Create checkm tsv for input to DRAM:
+        echo -e "Bin Id\tCompleteness\tContamination" > {params.workdir}/header.txt
+        sed '1d;' 3_Outputs/5_Refined_Bins/dRep_groups/{group}/genome_info.csv |
+        tr ',' '\t' > {params.workdir}/bininfo.txt
+        cat {params.workdir}/header.txt {params.workdir}/bininfo.txt > {params.workdir}checkm.tsv
+
+        # Clean up
+        rm {params.workdir}/*.txt
+
+        # Run DRAM-annotate:
+        for group in {params.workdir}/group*;
+        do echo DRAM.py annotate \
+        -i '$group/*.fa.gz' \
+        --gtdb_taxonomy {params.gtdbtax} \
+        --checkm_quality {params.workdir}checkm.tsv \
+        --threads 8 \
+        --min_contig_size 2500 \
+        -o "$group"_DRAM;
+            done | parallel -j 5
+
+        # Merge DRAM groups
+        DRAM.py merge_annotation \
+        -i {params.workdir}/'group*_DRAM' \
+        -o {params.workdir}/merged_DRAM
+
+        # Distill annotations:
+        DRAM.py distill \
+        -i {params.workdir}/merged_DRAM/annotations.tsv \
+        --rrna_path {params.workdir}/merged_DRAM/rrnas.tsv \
+        --trna_path {params.workdir}/merged_DRAM/trnas.tsv \
+        -o {params.workdir}/Distillate
+
+        # Rename, clean, compress:
+        for i in {params.workdir}/Distillate/*;
+            do mv $i {params.workdir}/Distillate/$(basename {group}_"$i");
                 done
+        pigz -p {threads} {params.workdir}/Distillate/*
+        rm -r {params.workdir}/group*_DRAM
         """
 ################################################################################
-### Map reads to the coassemblies
-rule Coassembly_index:
-    input:
-        report = "3_Outputs/2_Coassemblies/{group}_QUAST/"
-    output:
-        bt2_index = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta.rev.2.bt2l",
-    params:
-        Coassembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta"
-    conda:
-        "2_Assembly_Binning.yaml"
-    threads:
-        40
-    benchmark:
-        "3_Outputs/0_Logs/{group}_coassembly_indexing.benchmark.tsv"
-    log:
-        "3_Outputs/0_Logs/{group}_coassembly_indexing.log"
-    message:
-        "Indexing {wildcards.group} coassembly using Bowtie2"
-    shell:
-        """
-        # Index the coassembly
-        bowtie2-build \
-            --large-index \
-            --threads {threads} \
-            {params.Coassembly} {params.Coassembly} \
-        &> {log}
-        """
-################################################################################
-### Map reads to the coassemblies
-rule Coassembly_mapping:
-    input:
-        bt2_index = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta.rev.2.bt2l"
-    output:
-        directory("3_Outputs/3_Coassembly_Mapping/BAMs/{group}/Complete")
-    params:
-        outdir = directory("3_Outputs/3_Coassembly_Mapping/BAMs/{group}"),
-        assembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
-        read_dir = "2_Reads/3_Host_removed/{group}"
-    conda:
-        "2_Assembly_Binning.yaml"
-    threads:
-        40
-    benchmark:
-        "3_Outputs/0_Logs/{group}_coassembly_mapping.benchmark.tsv"
-    log:
-        "3_Outputs/0_Logs/{group}_coassembly_mapping.log"
-    message:
-        "Mapping {wildcards.group} samples to coassembly using Bowtie2"
-    shell:
-        """
-        # Map reads to catted reference using Bowtie2
-        for fq1 in {params.read_dir}/*_1.fastq.gz; do \
-        bowtie2 \
-            --time \
-            --threads {threads} \
-            -x {params.assembly} \
-            -1 $fq1 \
-            -2 ${{fq1/_1.fastq.gz/_2.fastq.gz}} \
-        | samtools sort -@ {threads} -o {params.outdir}/$(basename ${{fq1/_1.fastq.gz/.bam}}); done
-
-        #Create output file for snakemake
-        mkdir -p {output}
-        """
-################################################################################
-### Bin contigs using metaWRAP's binning module
-rule metaWRAP_binning:
-    input:
-        "3_Outputs/3_Coassembly_Mapping/BAMs/{group}/Complete"
-    output:
-        "3_Outputs/4_Binning/{group}/Done.txt"
-    params:
-        concoct = "3_Outputs/4_Binning/{group}/concoct_bins",
-        maxbin2 = "3_Outputs/4_Binning/{group}/maxbin2_bins",
-        metabat2 = "3_Outputs/4_Binning/{group}/metabat2_bins",
-        outdir = "3_Outputs/4_Binning/{group}",
-        bams = "3_Outputs/3_Coassembly_Mapping/BAMs/{group}",
-        assembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
-        memory = "180"
-    conda:
-        "2_MetaWRAP.yaml"
-    threads:
-        40
-    benchmark:
-        "3_Outputs/0_Logs/{group}_coassembly_binning.benchmark.tsv"
-    log:
-        "3_Outputs/0_Logs/{group}_coassembly_binning.log"
-    message:
-        "Binning {wildcards.group} contigs with MetaWRAP (concoct, maxbin2, metabat2)"
-    shell:
-        """
-        # Create dummy fastq/assembly files to trick metaWRAP into running without mapping
-        mkdir -p {params.outdir}/work_files
-
-        touch {params.outdir}/work_files/assembly.fa.bwt
-
-        for bam in {params.bams}/*.bam; do echo "@" > {params.outdir}/work_files/$(basename ${{bam/.bam/_1.fastq}}); done
-        for bam in {params.bams}/*.bam; do echo "@" > {params.outdir}/work_files/$(basename ${{bam/.bam/_2.fastq}}); done
-
-        #Symlink BAMs for metaWRAP
-        for bam in {params.bams}/*.bam; do ln -s `pwd`/$bam {params.outdir}/work_files/$(basename $bam); done
-
-        # Run metaWRAP binning
-        metawrap binning -o {params.outdir} \
-            -t {threads} \
-            -m {params.memory} \
-            -a {params.assembly} \
-            -l 1500 \
-            --metabat2 \
-            --maxbin2 \
-            --concoct \
-        {params.outdir}/work_files/*_1.fastq {params.outdir}/work_files/*_2.fastq
-
-        # Create dummy file for refinement input
-        echo "Binning complete" > {output}
-        """
-################################################################################
-### Automatically refine bins using metaWRAP's refinement module
-rule metaWRAP_refinement:
-    input:
-        "3_Outputs/4_Binning/{group}/Done.txt"
-    output:
-        stats = "3_Outputs/5_Refined_Bins/{group}/{group}_metawrap_70_10_bins.stats",
-        contigmap = "3_Outputs/5_Refined_Bins/{group}/{group}_metawrap_70_10_bins.contigs"
-    params:
-        concoct = "3_Outputs/4_Binning/{group}/concoct_bins",
-        maxbin2 = "3_Outputs/4_Binning/{group}/maxbin2_bins",
-        metabat2 = "3_Outputs/4_Binning/{group}/metabat2_bins",
-        outdir = "3_Outputs/5_Refined_Bins/{group}",
-        memory = "180",
-        group = "{group}"
-    conda:
-        "2_MetaWRAP.yaml"
-    threads:
-        40
-    benchmark:
-        "3_Outputs/0_Logs/{group}_coassembly_bin_refinement.benchmark.tsv"
-    log:
-        "3_Outputs/0_Logs/{group}_coassembly_bin_refinement.log"
-    message:
-        "Refining {wildcards.group} bins with MetaWRAP's bin refinement module"
-    shell:
-        """
-        metawrap bin_refinement \
-            -m {params.memory} \
-            -t {threads} \
-            -o {params.outdir} \
-            -A {params.concoct} \
-            -B {params.maxbin2} \
-            -C {params.metabat2} \
-            -c 70 \
-            -x 10
-
-        # Rename metawrap bins to match coassembly group:
-        mv {params.outdir}/metawrap_70_10_bins.stats {output.stats}
-        mv {params.outdir}/metawrap_70_10_bins.contigs {output.contigmap}
-        sed -i'' '2,$s/bin/bin_{params.group}/g' {output.stats}
-        sed -i'' 's/bin/bin_{params.group}/g' {output.contigmap}
-        """
-################################################################################
-### Calculate the number of reads that mapped to coassemblies
-rule coverM_assembly:
-    input:
-        "3_Outputs/5_Refined_Bins/{group}/{group}_metawrap_70_10_bins.stats"
-    output:
-        "3_Outputs/6_CoverM/{group}_assembly_coverM.txt"
-    params:
-        mapped_bams = "3_Outputs/3_Coassembly_Mapping/BAMs/{group}",
-        assembly = "3_Outputs/2_Coassemblies/{group}/{group}_contigs.fasta",
-        binning_files = "3_Outputs/4_Binning/{group}",
-        refinement_files = "3_Outputs/5_Refined_Bins/{group}",
-        memory = "180",
-    conda:
-        "2_Assembly_Binning.yaml"
-    threads:
-        40
-    benchmark:
-        "3_Outputs/0_Logs/{group}_coassembly_bin_refinement.benchmark.tsv"
-    log:
-        "3_Outputs/0_Logs/{group}_coassembly_bin_refinement.log"
-    message:
-        "Calculating coassembly mapping rate for {wildcards.group} with CoverM"
-    shell:
-        """
-        coverm genome \
-            -b {params.mapped_bams}/*.bam \
-            --genome-fasta-files {params.assembly} \
-            -m relative_abundance \
-            -t {threads} \
-            --min-covered-fraction 0 \
-            > {output}
-
-        # Clean up metaWRAP temp files
-        rm -rf {params.binning_files}/work_files
-        rm -f {params.binning_files}/*/*.fa
-        rm -rf {params.refinement_files}/work_files
-        pigz -p {threads} {params.refinement_files}/concoct_bins/*
-        pigz -p {threads} {params.refinement_files}/metabat2_bins/*
-        pigz -p {threads} {params.refinement_files}/maxbin2_bins/*
-
-        """
+###
