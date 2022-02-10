@@ -57,16 +57,17 @@ rule dereplication:
                 done
         sed -i'' 's@^@{input.bins}/bins/@g' {input.bins}/bin_info.txt
         cat {input.bins}/header.txt {input.bins}/bin_info.txt > {input.bins}/genome_info.csv
+        sed -i'' 's/,/.fa.gz,/' {input.bins}/genome_info.csv
         rm {input.bins}/*.txt
 
         # Run dRep
             dRep dereplicate \
+                {params.workdir} \
                 -p {threads} \
                 -comp 70 \
                 -sa {params.ANI} \
                 -g {input.bins}/bins/*.fa.gz \
-                --genomeInfo {input.bins}/genome_info.csv \
-                {params.workdir}
+                --genomeInfo {input.bins}/genome_info.csv
                 2> {log}
 
         # Rename and compress output
