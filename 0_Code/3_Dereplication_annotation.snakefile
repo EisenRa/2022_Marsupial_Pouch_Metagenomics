@@ -69,10 +69,10 @@ rule dereplication:
 
         # Rename and compress output
         for bin in {params.workdir}/dereplicated_genomes/*.fa; do
-            mv $bin {params.workdir}/dereplicated_genomes/$(basename {group}_"$bin");
+            mv $bin {params.workdir}/dereplicated_genomes/$(basename {wildcards.group}_"$bin");
                 done
         for i in {params.workdir}/figures/*; do
-            mv $i {params.workdir}/figures/$(basename {group}_"$i");
+            mv $i {params.workdir}/figures/$(basename {wildcards.group}_"$i");
                 done
 
         pigz -p {threads} {paras.workdir}/dereplicated_genomes/*.fa
@@ -108,7 +108,7 @@ rule gtdbtk:
         --out_dir {params.outdir} \
         --cpus {threads} \
         --pplacer_cpus 8 \
-        --prefix {group}
+        --prefix {wildcards.group}
 
         # Create a merged summary output for DRAM:
         if [ -s "{params.outdir}/classify/gtdbtk.ar122.summary.tsv" ]
@@ -191,7 +191,7 @@ rule DRAM_annotate:
 
         # Rename, clean, compress:
         for i in {params.workdir}/Distillate/*;
-            do mv $i {params.workdir}/Distillate/$(basename {group}_"$i");
+            do mv $i {params.workdir}/Distillate/$(basename {wildcards.group}_"$i");
                 done
         pigz -p {threads} {params.workdir}/Distillate/*
         rm -r {params.workdir}/group*_DRAM
