@@ -27,7 +27,7 @@ len(MAGS)
 ### Setup the desired outputs
 rule all:
     input:
-        expand("3_Outputs/6_CoverM/{group}_assembly_coverM.txt", group=GROUP)
+        expand("3_Outputs/9_DRAM/{group}/Distillate/{group}_product.html", group=GROUP)
 ################################################################################
 ### Dereplicate refined bins using dRep
 rule dereplication:
