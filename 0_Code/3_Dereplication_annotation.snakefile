@@ -56,9 +56,12 @@ rule dereplication:
             do sed '1d;' $i | cut -f 1,2,3 --output-delimiter ',' >> {input.bins}/bin_info.txt;
                 done
         sed -i'' 's@^@{input.bins}/bins/@g' {input.bins}/bin_info.txt
-        sed -i'' 's/,/.fa.gz,/' {input.bins}/bin_info.txt
+        sed -i'' 's/,/.fa,/' {input.bins}/bin_info.txt
         cat {input.bins}/header.txt {input.bins}/bin_info.txt > {input.bins}/genome_info.csv
         rm {input.bins}/*.txt
+
+        # Decompress bins (dRep can't handle .gz input) -- learned this the hard way!
+        gunzip {input.bins}/bins/*.fa.gz
 
         # Run dRep
             dRep dereplicate \
@@ -68,12 +71,14 @@ rule dereplication:
                 -sa {params.ANI} \
                 -g {input.bins}/bins/*.fa.gz \
                 --genomeInfo {input.bins}/genome_info.csv
-                2> {log}
+                2> {log}c-
 
-        # Rename output
+        # Rename output, compress bins
         for i in {params.workdir}/figures/*; do
             mv $i {params.workdir}/figures/$(basename {wildcards.group}_"$i");
                 done
+        gzip {input.bins}/bins/*.fa
+        gzip {params.workdir}/dereplicated_genomes/*.fa
         """
 ################################################################################
 ### Annotate dereplicated MAGs with gtdb-tk taxonomy:
