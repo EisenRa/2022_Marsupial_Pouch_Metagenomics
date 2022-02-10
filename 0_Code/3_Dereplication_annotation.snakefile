@@ -69,6 +69,11 @@ rule dereplication:
                 -g {input.bins}/bins/*.fa.gz \
                 --genomeInfo {input.bins}/genome_info.csv
                 2> {log}
+
+        # Rename output
+        for i in {params.workdir}/figures/*; do
+            mv $i {params.workdir}/figures/$(basename {wildcards.group}_"$i");
+                done
         """
 ################################################################################
 ### Annotate dereplicated MAGs with gtdb-tk taxonomy:
