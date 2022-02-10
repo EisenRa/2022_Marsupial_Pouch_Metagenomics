@@ -64,7 +64,8 @@ rule dereplication:
                 -comp 70 \
                 -sa {params.ANI} \
                 -g {input.bins}/bins/*.fa.gz \
-                --genomeInfo {input.bins}/genome_info.csv
+                --genomeInfo {input.bins}/genome_info.csv \
+                {params.workdir}
                 2> {log}
 
         # Rename and compress output
