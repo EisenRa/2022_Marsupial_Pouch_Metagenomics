@@ -77,8 +77,8 @@ rule dereplication:
         for i in {params.workdir}/figures/*; do
             mv $i {params.workdir}/figures/$(basename {wildcards.group}_"$i");
                 done
-        gzip {input.bins}/bins/*.fa
-        gzip {params.workdir}/dereplicated_genomes/*.fa
+        pigz -p {threads} {input.bins}/bins/*.fa
+        gzip -p {threads} {params.workdir}/dereplicated_genomes/*.fa
         """
 ################################################################################
 ### Annotate dereplicated MAGs with gtdb-tk taxonomy:
