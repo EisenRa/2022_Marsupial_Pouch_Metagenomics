@@ -119,13 +119,12 @@ rule gtdbtk:
         then
         sed '1d;' {params.outdir}/classify/{wildcards.group}.ar122.summary.tsv > {params.outdir}/ar122.tsv
         cat {output} {params.outdir}/ar122.tsv > {params.outdir}/gtdbtk_combined_summary.tsv
+        rm {params.outdir}/ar122.tsv
+        
         # Otherwise, just use the bacterial summary (if no archaeal bins)
         else
         cat {output} > {params.outdir}/{wildcards.group}_combined_summary.tsv
         fi
-
-        #Clean up
-        rm {params.outdir}/ar122.tsv
         """
 ################################################################################
 ### Index the MAG catalogue
