@@ -120,7 +120,7 @@ rule gtdbtk:
         sed '1d;' {params.outdir}/classify/{wildcards.group}.ar122.summary.tsv > {params.outdir}/ar122.tsv
         cat {output} {params.outdir}/ar122.tsv > {params.outdir}/gtdbtk_combined_summary.tsv
         rm {params.outdir}/ar122.tsv
-        
+
         # Otherwise, just use the bacterial summary (if no archaeal bins)
         else
         cat {output} > {params.outdir}/{wildcards.group}_combined_summary.tsv
@@ -232,7 +232,7 @@ rule DRAM_annotate:
         "3_Outputs/11_DRAM/{group}/Distillate/{group}_product.html"
     params:
         bins = "3_Outputs/7_Dereplication/{group}/dereplicated_genomes",
-        workdir = "3_Outputs/9_DRAM/{group}",
+        workdir = "3_Outputs/11_DRAM/{group}",
         gtdbtax = "3_Outputs/8_GTDB-tk/{group}/gtdbtk_combined_summary.tsv",
     conda:
         "3_DRAM.yaml"
