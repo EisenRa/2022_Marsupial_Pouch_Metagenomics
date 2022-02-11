@@ -163,13 +163,13 @@ rule Coassembly_index:
 ### Map the preprocessed reads to the dereplicated MAG catalogue
 rule MAG_catalogue_mapping:
     input:
-        "3_Outputs/9_MAG_catalogue_mapping/{group}/{group}_MAGs.fasta.rev.2.bt2l"
+        "3_Outputs/9_MAG_catalogue_mapping/{group}/{group}_MAGs.fa.gz.rev.2.bt2l"
     output:
         "3_Outputs/9_MAG_catalogue_mapping/{group}/BAMs/Done.txt"
     params:
         reads = "2_Reads/3_Host_removed/{group}",
         BAMs = "3_Outputs/9_MAG_catalogue_mapping/{group}/BAMs",
-        MAGs = "3_Outputs/9_MAG_catalogue_mapping/{group}/{group}_MAGs.fasta"
+        MAGs = "3_Outputs/9_MAG_catalogue_mapping/{group}/{group}_MAGs.fa.gz"
     conda:
         "2_Assembly_Binning.yaml"
     threads:
