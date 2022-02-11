@@ -111,7 +111,6 @@ rule gtdbtk:
         --extension "gz" \
         --out_dir {params.outdir} \
         --cpus {threads} \
-#        --pplacer_cpus 1 \
         --scratch_dir {params.outdir} \
         --prefix {wildcards.group}
 
