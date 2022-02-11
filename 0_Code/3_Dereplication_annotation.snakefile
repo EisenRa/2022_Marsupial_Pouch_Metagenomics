@@ -217,7 +217,7 @@ rule coverM_assembly:
     shell:
         """
         coverm genome \
-            -b {params.BAMs/*.bam \
+            -b {params.BAMs}/*.bam \
             -s - \
             -m count relative_abundance covered_fraction length \
             -t {threads} \
