@@ -331,5 +331,4 @@ rule coverM_assembly:
 
         # Create directory for dereplication groups:
         mkdir -p 3_Outputs/5_Refined_Bins/dRep_groups
-
         """

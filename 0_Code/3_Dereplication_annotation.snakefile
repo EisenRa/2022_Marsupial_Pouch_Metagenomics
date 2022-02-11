@@ -69,9 +69,9 @@ rule dereplication:
                 -p {threads} \
                 -comp 70 \
                 -sa {params.ANI} \
-                -g {input.bins}/bins/*.fa.gz \
+                -g {input.bins}/bins/*.fa \
                 --genomeInfo {input.bins}/genome_info.csv
-                2> {log}c-
+                2> {log}
 
         # Rename output, compress bins
         for i in {params.workdir}/figures/*; do
@@ -128,12 +128,109 @@ rule gtdbtk:
         rm ar122.tsv
         """
 ################################################################################
-### Functionally annotate/distil MAGs with DRAM
-rule DRAM_annotate:
+### Index the MAG catalogue
+rule Coassembly_index:
     input:
         "3_Outputs/8_GTDB-tk/{group}/classify/gtdbtk.bac120.summary.tsv"
     output:
-        "3_Outputs/9_DRAM/{group}/Distillate/{group}_product.html"
+        "3_Outputs/9_MAG_catalogue_mapping/{group}/{group}_MAGs.fasta.rev.2.bt2l"
+    params:
+        MAGs = "3_Outputs/7_Dereplication/{group}/dereplicated_genomes",
+        catted_MAGs = "3_Outputs/9_MAG_catalogue_mapping/{group}/{group}_MAGs.fasta",
+    conda:
+        "2_Assembly_Binning.yaml"
+    threads:
+        40
+    benchmark:
+        "3_Outputs/0_Logs/{group}_MAG_indexing.benchmark.tsv"
+    log:
+        "3_Outputs/0_Logs/{group}_MAG_indexing.log"
+    message:
+        "Indexing {wildcards.group} MAG catalogue using Bowtie2"
+    shell:
+        """
+        # Concatenate the dereplicated MAGs into a single file
+        cat {params.MAGs}/*.fa.gz > {params.catted_MAGs}
+
+        # Index the MAG catalogue
+        bowtie2-build \
+            --large-index \
+            --threads {threads} \
+            {params.catted_MAGs} {params.catted_MAGs} \
+        &> {log}
+        """
+################################################################################
+### Map the preprocessed reads to the dereplicated MAG catalogue
+rule MAG_catalogue_mapping:
+    input:
+        "3_Outputs/9_MAG_catalogue_mapping/{group}/{group}_MAGs.fasta.rev.2.bt2l"
+    output:
+        "3_Outputs/9_MAG_catalogue_mapping/{group}/BAMs/Done.txt"
+    params:
+        reads = "2_Reads/3_Host_removed/{group}",
+        BAMs = "3_Outputs/9_MAG_catalogue_mapping/{group}/BAMs",
+        MAGs = "3_Outputs/9_MAG_catalogue_mapping/{group}/{group}_MAGs.fasta"
+    conda:
+        "2_Assembly_Binning.yaml"
+    threads:
+        40
+    benchmark:
+        "3_Outputs/0_Logs/{group}_MAG_mapping.benchmark.tsv"
+    log:
+        "3_Outputs/0_Logs/{group}_MAG_mapping.log"
+    message:
+        "Mapping {wildcards.group} samples to MAG their MAG catalogue using Bowtie2"
+    shell:
+        """
+        # Map reads to catted reference using Bowtie2
+        for fq1 in {params.reads}/*_1.fastq.gz; do \
+        bowtie2 \
+            --time \
+            --threads {threads} \
+            -x {params.MAGs} \
+            -1 $fq1 \
+            -2 ${{fq1/_1.fastq.gz/_2.fastq.gz}} \
+        | samtools sort -@ {threads} -o {params.BAMs}/$(basename ${{fq1/_1.fastq.gz/.bam}}); done
+
+        #Create output file for snakemake
+        echo "hi" > {output}
+        """
+################################################################################
+### Create the final count table using CoverM
+rule coverM_assembly:
+    input:
+        "3_Outputs/9_MAG_catalogue_mapping/{group}/BAMs/Done.txt"
+    output:
+        "3_Outputs/10_Final_tables/{group}_final_count_table.txt"
+    params:
+        BAMs = "3_Outputs/9_MAG_catalogue_mapping/{group}/BAMs",
+    conda:
+        "2_Assembly_Binning.yaml"
+    threads:
+        40
+    benchmark:
+        "3_Outputs/0_Logs/{group}_coverm.benchmark.tsv"
+    log:
+        "3_Outputs/0_Logs/{group}_coverm.log"
+    message:
+        "Creating final count table for {wildcards.group} with CoverM"
+    shell:
+        """
+        coverm genome \
+            -b {params.BAMs/*.bam \
+            -s - \
+            -m count relative_abundance covered_fraction length \
+            -t {threads} \
+            --min-covered-fraction 0 \
+            > {output}
+        """
+################################################################################
+### Functionally annotate/distil MAGs with DRAM
+rule DRAM_annotate:
+    input:
+        "3_Outputs/10_Final_tables/{group}_final_count_table.txt"
+    output:
+        "3_Outputs/11_DRAM/{group}/Distillate/{group}_product.html"
     params:
         bins = "3_Outputs/7_Dereplication/{group}/dereplicated_genomes",
         workdir = "3_Outputs/9_DRAM/{group}",
