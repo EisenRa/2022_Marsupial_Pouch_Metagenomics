@@ -125,7 +125,7 @@ rule gtdbtk:
         fi
 
         #Clean up
-        rm ar122.tsv
+        rm {params.outdir}/ar122.tsv
         """
 ################################################################################
 ### Index the MAG catalogue
