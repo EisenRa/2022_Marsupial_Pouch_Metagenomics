@@ -86,7 +86,7 @@ rule gtdbtk:
     input:
         "3_Outputs/7_Dereplication/{group}/figures/{group}_Primary_clustering_dendrogram.pdf"
     output:
-         "3_Outputs/8_GTDB-tk/{group}/classify/gtdbtk.bac120.summary.tsv"
+         "3_Outputs/8_GTDB-tk/{group}/classify/{group}.bac120.summary.tsv"
     params:
         outdir = "3_Outputs/8_GTDB-tk/{group}",
         bins = "3_Outputs/7_Dereplication/{group}/dereplicated_genomes"
@@ -115,9 +115,9 @@ rule gtdbtk:
         --prefix {wildcards.group}
 
         # Create a merged summary output for DRAM:
-        if [ -s "{params.outdir}/classify/gtdbtk.ar122.summary.tsv" ]
+        if [ -s "{params.outdir}/classify/{wildcards.group}.ar122.summary.tsv" ]
         then
-        sed '1d;' {params.outdir}/classify/gtdbtk.ar122.summary.tsv > {params.outdir}/ar122.tsv
+        sed '1d;' {params.outdir}/classify/{wildcards.group}.ar122.summary.tsv > {params.outdir}/ar122.tsv
         cat {output} {params.outdir}/ar122.tsv > {params.outdir}/gtdbtk_combined_summary.tsv
         # Otherwise, just use the bacterial summary (if no archaeal bins)
         else
@@ -131,7 +131,7 @@ rule gtdbtk:
 ### Index the MAG catalogue
 rule Coassembly_index:
     input:
-        "3_Outputs/8_GTDB-tk/{group}/classify/gtdbtk.bac120.summary.tsv"
+        "3_Outputs/8_GTDB-tk/{group}/classify/{group}.bac120.summary.tsv"
     output:
         "3_Outputs/9_MAG_catalogue_mapping/{group}/{group}_MAGs.fasta.rev.2.bt2l"
     params:
