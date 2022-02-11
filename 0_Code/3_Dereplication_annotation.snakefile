@@ -75,7 +75,7 @@ rule dereplication:
 
         # Rename output, compress bins
         for i in {params.workdir}/figures/*; do
-            mv $i {params.workdir}/figures/$(basename {wildcards.group}_"$i");
+            mv $i {params.workdir}/figures/{wildcards.group}_$(basename $i);
                 done
         pigz -p {threads} {input.bins}/bins/*.fa
         gzip -p {threads} {params.workdir}/dereplicated_genomes/*.fa
