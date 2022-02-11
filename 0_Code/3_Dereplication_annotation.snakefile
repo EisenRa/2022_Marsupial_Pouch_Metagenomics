@@ -121,7 +121,7 @@ rule gtdbtk:
         cat {output} {params.outdir}/ar122.tsv > {params.outdir}/gtdbtk_combined_summary.tsv
         # Otherwise, just use the bacterial summary (if no archaeal bins)
         else
-        cat {output} > {params.outdir}/gtdbtk_combined_summary.tsv
+        cat {output} > {params.outdir}/{wildcards.group}_combined_summary.tsv
         fi
 
         #Clean up
@@ -133,10 +133,10 @@ rule Coassembly_index:
     input:
         "3_Outputs/8_GTDB-tk/{group}/classify/{group}.bac120.summary.tsv"
     output:
-        "3_Outputs/9_MAG_catalogue_mapping/{group}/{group}_MAGs.fasta.rev.2.bt2l"
+        "3_Outputs/9_MAG_catalogue_mapping/{group}/{group}_MAGs.fa.gz.rev.2.bt2l"
     params:
         MAGs = "3_Outputs/7_Dereplication/{group}/dereplicated_genomes",
-        catted_MAGs = "3_Outputs/9_MAG_catalogue_mapping/{group}/{group}_MAGs.fasta",
+        catted_MAGs = "3_Outputs/9_MAG_catalogue_mapping/{group}/{group}_MAGs.fa.gz",
     conda:
         "2_Assembly_Binning.yaml"
     threads:
