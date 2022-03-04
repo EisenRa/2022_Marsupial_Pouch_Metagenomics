@@ -148,8 +148,17 @@ rule Coassembly_index:
         "Indexing {wildcards.group} MAG catalogue using Bowtie2"
     shell:
         """
+        # Rename dereplicated MAG headers for CoverM compatibility
+        for i in {params.MAGs}/*.fa.gz;
+            do rename.sh \
+                in=$i \
+                out=${i/.fa.gz/_renamed.fa.gz} \
+                zl=9 \
+                prefix=$(basename ${i/.fa.gz/-});
+            done
+
         # Concatenate the dereplicated MAGs into a single file
-        cat {params.MAGs}/*.fa.gz > {params.catted_MAGs}
+        cat {params.MAGs}/*_renamed.fa.gz > {params.catted_MAGs}
 
         # Index the MAG catalogue
         bowtie2-build \
