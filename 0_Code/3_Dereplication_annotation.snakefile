@@ -218,7 +218,7 @@ rule coverM_assembly:
         coverm genome \
             -b {params.BAMs}/*.bam \
             -s - \
-            -m count relative_abundance covered_fraction length \
+            -m count covered_fraction length \
             -t {threads} \
             --min-covered-fraction 0 \
             > {output}
