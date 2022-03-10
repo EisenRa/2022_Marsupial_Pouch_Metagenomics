@@ -158,7 +158,7 @@ rule Coassembly_index:
             done
 
         # Concatenate the dereplicated MAGs into a single file
-        cat {params.MAGs}/*_renamed.fa.gz > {params.catted_MAGs}
+        cat {params.MAGs}/*_renamed.fa.gz > {params.catted_MAGs} 
 
         # Index the MAG catalogue
         bowtie2-build \
